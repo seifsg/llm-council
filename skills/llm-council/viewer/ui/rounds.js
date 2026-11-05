@@ -13,26 +13,6 @@ function roundsTable(rounds, current) {
   return `<div class="table-wrap"><table><thead><tr><th scope="col">Round</th><th scope="col">Date</th><th scope="col">Draft</th><th scope="col">Size</th><th scope="col">LLMs</th><th scope="col" class="num">Answered</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-// Decides what may be compared, from the fingerprints each round recorded when it ran.
-function comparability(A, B) {
-  const [a, b] = [A.meta.hashes, B.meta.hashes];
-  const promptSame = Boolean(a?.prompt && a.prompt === b?.prompt);
-  const effortSame = !A.meta.effort || !B.meta.effort || A.meta.effort === B.meta.effort;
-  const lifeSame = (persona) => (a?.lives?.[persona] ?? "") === (b?.lives?.[persona] ?? "");
-  const reason = !a || !b ? "one round has no fingerprint" : !promptSame ? "the seat prompt changed" : !effortSame ? "the effort changed" : "";
-  return { reason, allows: (persona) => !reason && lifeSame(persona) };
-}
-
-// A half-written answer is not a decision yet.
-const scored = (s) => s?.status === "done" && Number.isFinite(s.parsed?.scores.overall);
-
-function pairs(A, B, keep) {
-  const before = new Map(A.seats.map((s) => [s.key, s]));
-  const check = comparability(A, B);
-  const all = B.seats.filter((s) => s.nature === "neutral" && scored(s) && keep(s)).map((b) => ({ b, a: before.get(b.key) })).filter(({ a }) => scored(a));
-  return { check, same: all.filter(({ b }) => check.allows(b.persona)), blocked: all.filter(({ b }) => !check.allows(b.persona)) };
-}
-
 function scoreSummary(same) {
   const average = (same.reduce((sum, p) => sum + p.b.parsed.scores.overall - p.a.parsed.scores.overall, 0) / same.length).toFixed(1);
   const shifted = same.filter((p) => p.a.parsed.firstPick !== p.b.parsed.firstPick).length;
@@ -102,21 +82,6 @@ function issuesCompared(A, B, nameA, nameB, open) {
     issueList(STANDING.fixed, fixed, row, open) + issueList(STANDING.fresh, fresh, row, open) + issueList(STANDING.open, still, ({ b: i }) => row(i), open);
 }
 
-// Line diff by longest common subsequence: offers are short enough for this to stay instant.
-function lineDiff(before, after) {
-  const [a, b] = [before, after].map((t) => t.split(/\r?\n/).map((l) => l.trim()).filter(Boolean));
-  const best = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
-  for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) best[i][j] = a[i] === b[j] ? best[i + 1][j + 1] + 1 : Math.max(best[i + 1][j], best[i][j + 1]);
-  const out = [];
-  let [i, j] = [0, 0];
-  while (i < a.length || j < b.length) {
-    if (i < a.length && j < b.length && a[i] === b[j]) { i++; j++; }
-    else if (j < b.length && (i === a.length || best[i][j + 1] >= best[i + 1][j])) out.push(["add", b[j++]]);
-    else out.push(["del", a[i++]]);
-  }
-  return out;
-}
-
 function offerChanges(A, B, nameA, nameB, open) {
   if (!A.meta.offerText || !B.meta.offerText) return `<p class="summary">One of these rounds has no saved offer to compare.</p>`;
   const changes = lineDiff(A.meta.offerText, B.meta.offerText);
@@ -142,11 +107,11 @@ function roundsView(state, keep) {
   if (!A || !B) return `${list}${head}<p class="empty">Loading rounds…</p>`;
   const [nameA, nameB] = [rounds.find((r) => r.id === cmpA), rounds.find((r) => r.id === cmpB)].map(roundName);
   B.seats.forEach((s) => { s.llmSource = B; });
-  const { check, same, blocked } = pairs(A, B, keep);
+  const { check, same, blocked } = pairUp(A, B, keep);
   const pilot = [A, B].some((R) => R.meta.kind === "pilot") ? ["One of these is a pilot. It tested the bench, not an offer, so read any change as a sanity check only."] : [];
   const notes = [...pilot, ...new Set([A.meta.hashesNote, B.meta.hashesNote].filter(Boolean))];
   const allNote = check.reason
-    ? `<div class="notice"><b>Findings only.</b> Scores are hidden because ${esc(check.reason)}. A score change would only measure that.</div>`
+    ? `<div class="notice"><b>Findings only.</b> Scores are hidden because ${esc(check.reason.toLowerCase())}. A score change would only measure that.</div>`
     : blocked.length ? `<div class="notice"><b>${count(blocked.length, "answer")} shown as findings only:</b> that person's facts or interview changed between rounds.</div>` : "";
   const numbers = same.length ? scoreSummary(same) + offerRows(A, B, same, nameA, nameB) + pickRows(same, nameA, nameB) : "";
   const perPerson = same.length ? scoreRows(same, nameA, nameB, open) : "";

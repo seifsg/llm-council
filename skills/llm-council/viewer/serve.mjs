@@ -12,7 +12,7 @@ import { findRounds, roundDir } from "./rounds.mjs";
 import { startDemo } from "./demo.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const SCRIPTS = ["icons.js", "parse.js", "issues.js", "views.js", "compare.js", "rounds.js", "app.js"];
+const SCRIPTS = ["icons.js", "parse.js", "issues.js", "views.js", "compare.js", "compute.js", "rounds.js", "improving.js", "app.js"];
 const ASSETS = { "/style.css": "text/css", ...Object.fromEntries(SCRIPTS.map((f) => [`/${f}`, "text/javascript"])) };
 const asset = (name) => readFileSync(join(HERE, "ui", name), "utf8");
 
@@ -75,8 +75,15 @@ const server = createServer((req, res) => {
   }
   if (path === "/" || ASSETS[path]) {
     const name = path === "/" ? "index.html" : path.slice(1);
-    res.writeHead(200, { "content-type": ASSETS[path] || "text/html", "cache-control": "no-store" });
-    return res.end(asset(name));
+    // A checkout can change under a running server: a missing file must not take the viewer down.
+    try {
+      const body = asset(name);
+      res.writeHead(200, { "content-type": ASSETS[path] || "text/html", "cache-control": "no-store" });
+      return res.end(body);
+    } catch {
+      res.writeHead(404);
+      return res.end();
+    }
   }
   res.writeHead(404);
   res.end();

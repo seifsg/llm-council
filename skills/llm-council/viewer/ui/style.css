@@ -249,3 +249,34 @@ td small.quiet { display: block; margin-top: 2px; font-size: 11px; }
   .issue-head { gap: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { *, .pulse, .caret { animation: none !important; transition: none !important; } }
+
+/* Am I improving? Green and red always sit beside a word or a sign. */
+:root { --good: #0f8a4f; --bad: #d03b3b; --flat: var(--ink); }
+.good { color: var(--good); }
+.bad { color: var(--bad); }
+.flat { color: var(--ink); }
+.hero { border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; background: var(--surface); box-shadow: 0 1px 2px rgb(0 0 0 / .03); color: var(--ink); }
+.hero.good { background: color-mix(in srgb, var(--good) 11%, var(--surface)); border-color: color-mix(in srgb, var(--good) 40%, var(--line)); }
+.hero.bad { background: color-mix(in srgb, var(--bad) 11%, var(--surface)); border-color: color-mix(in srgb, var(--bad) 40%, var(--line)); }
+.hero h1 { font-size: 34px; line-height: 1.15; white-space: normal; letter-spacing: -.02em; font-weight: 700; margin: 2px 0 6px; }
+.hero.good h1 { color: var(--good); }
+.hero.bad h1 { color: var(--bad); }
+.eyebrow { font-size: 13px; color: var(--ink-2); font-weight: 550; }
+.hero-text { font-size: 15.5px; color: var(--ink-2); max-width: 70ch; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 8px; }
+.tile { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 2px rgb(0 0 0 / .03); }
+.tile-label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.tile-value { font-size: 24px; font-weight: 700; letter-spacing: -.02em; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.tile-hint { font-size: 12px; color: var(--ink-3); }
+.imp-notes { margin: 10px 2px 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--ink-3); }
+.imp-live { font-size: 13px; color: var(--ink-2); margin: 0 2px 10px; }
+.imp-group { margin-top: 24px; }
+.imp-head { font-size: 15px; font-weight: 650; margin: 0 2px 8px; }
+.imp-head .quiet { margin-left: 4px; }
+.imp-do { font-size: 13.5px; padding: 4px 2px; }
+.pill.real { color: var(--good); border-color: var(--good); font-weight: 600; }
+.imp-foot { margin: 24px 2px 0; font-size: 12px; color: var(--ink-3); max-width: 70ch; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --good: #4cc38a; --bad: #f2766b; } }
+:root[data-theme="dark"] { --good: #4cc38a; --bad: #f2766b; }
+@media (max-width: 700px) { .hero { padding: 18px; } .hero h1 { font-size: 28px; } .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .tile-value { font-size: 20px; } }

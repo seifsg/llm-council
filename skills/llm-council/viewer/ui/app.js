@@ -1,5 +1,6 @@
 // Holds the state, polls the open round while it is live, and redraws only what changed.
 const TABS = [
+  ["improving", "Am I improving?", () => improvingView(state)],
   ["issues", "Common issues", issuesView],
   ["feed", "Live", feedView],
   ["compare", "LLMs", compareView],
@@ -14,7 +15,7 @@ const state = {
 };
 const STATIC = window.__COUNCIL__ || null;
 const $ = (id) => document.getElementById(id);
-const tabsNow = () => TABS.filter(([id]) => id !== "rounds" || state.rounds.length > 1);
+const tabsNow = () => TABS.filter(([id]) => (id !== "rounds" || state.rounds.length > 1) && (id !== "improving" || numberedRounds(state.rounds).length > 0));
 
 // Touches the page only when the markup changed, so polling never resets hover or animations.
 function setHtml(el, html) {
@@ -99,12 +100,13 @@ function drawFilters(force) {
 
 function drawView() {
   setHtml($("view"), TABS.find(([id]) => id === state.tab)[2](filtered(), state.data, state.open));
-  if (state.tab === "rounds") loadCompared();
+  if (state.tab === "rounds") loadCompared([state.cmpA, state.cmpB]);
+  if (state.tab === "improving") loadCompared(latestPair(state.rounds).map((r) => r?.id));
 }
 
 // Fetches a compared round once, then redraws. The open round stays fresh through polling.
-async function loadCompared() {
-  const missing = [state.cmpA, state.cmpB].filter((id) => id && !state.cache[id]);
+async function loadCompared(ids) {
+  const missing = ids.filter((id) => id && !state.cache[id]);
   if (!missing.length) return;
   await Promise.all(missing.map(loadRound));
   drawView();
@@ -234,6 +236,7 @@ $("theme").addEventListener("click", () => {
 function chooseRounds(rounds) {
   state.rounds = rounds;
   if (state.roundId) return;
+  if (numberedRounds(rounds).length) state.tab = "improving";
   const asked = new URLSearchParams(location.search).get("round");
   const numbered = rounds.filter((r) => r.round !== null);
   const latest = numbered.at(-1) || rounds.at(-1);
@@ -257,6 +260,12 @@ async function poll() {
       state.data = parsedRun(JSON.parse(raw));
       state.cache[state.roundId] = state.data;
       drawAll();
+    }
+    // The other compared round can gain an LLM while this one is open.
+    if (state.tab === "improving" && state.tick % 4 === 1) {
+      const others = latestPair(state.rounds).map((r) => r?.id).filter((id) => id && id !== state.roundId);
+      await Promise.all(others.map(loadRound));
+      if (others.length) drawView();
     }
     $("offline").hidden = true;
   } catch {
