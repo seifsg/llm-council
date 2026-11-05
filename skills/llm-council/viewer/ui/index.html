@@ -11,18 +11,26 @@
   <div class="top-row">
     <div class="title-block">
       <h1 id="title">Council</h1>
-      <p id="decision"></p>
+      <p id="decision" tabindex="0"></p>
     </div>
-    <button class="ghost" id="theme" type="button" aria-label="Switch light or dark">◐</button>
+    <div class="status">
+      <span id="counts" class="counts" tabindex="0"></span>
+      <span id="llms" class="llm-strip"></span>
+      <button class="ghost icon-btn" id="theme" type="button" aria-label="Switch light or dark" data-tip="Switch light or dark">◐</button>
+    </div>
   </div>
-  <div id="progress"></div>
-  <div class="llm-strip" id="llms" aria-label="LLMs in this run"></div>
-  <nav class="tabs" id="tabs" aria-label="Views"></nav>
-  <div class="filters" id="filters"></div>
+  <div class="nav-row">
+    <nav class="tabs" id="tabs" aria-label="Views"></nav>
+    <button class="ghost" id="filter-toggle" type="button" aria-controls="filters">Filter</button>
+  </div>
+  <div class="filters" id="filters" hidden></div>
+  <div class="bar" id="progress" role="img"></div>
 </header>
+<p class="offline" id="offline" hidden>Lost the connection to the viewer. Retrying.</p>
 <main id="view" tabindex="-1"></main>
 <aside class="drawer" id="drawer" aria-label="Full answer" hidden></aside>
-<footer class="note">Simulated viewpoints. They find problems. They do not prove anyone would pay.</footer>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<footer class="note">Simulated people. They find problems. They do not prove anyone would pay.</footer>
 <script src="parse.js"></script>
 <script src="issues.js"></script>
 <script src="views.js"></script>

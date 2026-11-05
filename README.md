@@ -32,13 +32,15 @@ Node 18 or later, nothing to install. It runs on your machine only, and `--demo`
 | View | What it answers |
 |---|---|
 | Common issues | What are different people all tripping over? |
-| Live thoughts | What is each seat writing right now? |
-| LLM differences | Run one LLM or many: where do they disagree on the same person? |
-| Ideas and questions | What better framings, first steps and questions came up? |
-| The room | Who said what, by persona and nature? |
+| Live | What is each seat writing right now? |
+| LLMs | Run one LLM or many: where do they disagree on the same person? |
+| Ideas | What better framings, first steps and questions came up? |
+| Room | Who said what, by persona and nature? |
 | Scores | How did Neutral seats decide on each option? |
 
-![LLM differences view, with invented demo data](docs/viewer-llms.jpg)
+It stays quiet by default: indicators and icons up front, with names and numbers in tooltips and full answers one click away. Press `/` to search.
+
+![LLMs view, with invented demo data](docs/viewer-llms.jpg)
 
 The header always shows which LLMs are in the run and how far each has got. Filter by nature, persona or LLM, and search every answer. Click anyone to read their full answer. `--static <file.html>` writes one page you can share. It holds every answer, so keep it private unless your materials are public.
 
