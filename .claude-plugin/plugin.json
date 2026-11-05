@@ -1,0 +1,9 @@
+{
+  "name": "llm-council",
+  "version": "0.1.0",
+  "description": "Runs a council of independent simulated viewpoints on any idea, offer, plan or decision, and ranks what they found into an action list.",
+  "homepage": "https://github.com/seifsg/llm-council",
+  "repository": "https://github.com/seifsg/llm-council",
+  "license": "MIT",
+  "keywords": ["council", "red-team", "decision", "personas", "review"]
+}

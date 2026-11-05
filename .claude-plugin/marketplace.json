@@ -1,0 +1,12 @@
+{
+  "name": "llm-council",
+  "description": "A council of independent simulated viewpoints for any decision.",
+  "owner": { "name": "seifsg" },
+  "plugins": [
+    {
+      "name": "llm-council",
+      "source": "./",
+      "description": "Runs a council of independent simulated viewpoints on any idea, offer, plan or decision, and ranks what they found into an action list."
+    }
+  ]
+}
