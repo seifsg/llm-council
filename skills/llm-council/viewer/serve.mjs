@@ -67,5 +67,10 @@ const server = createServer((req, res) => {
 });
 
 // Local only: the answers can hold private material.
-const port = Number(flag("--port")) || 4173;
-server.listen(port, "127.0.0.1", () => console.log(`Council viewer: http://127.0.0.1:${port}`));
+let port = Number(flag("--port")) || 4173;
+server.on("error", (err) => {
+  if (err.code !== "EADDRINUSE") throw err;
+  server.listen(++port, "127.0.0.1");
+});
+server.on("listening", () => console.log(`Council viewer: http://127.0.0.1:${port}`));
+server.listen(port, "127.0.0.1");
