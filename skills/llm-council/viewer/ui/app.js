@@ -2,6 +2,8 @@
 const TABS = [
   ["improving", "Am I improving?", () => improvingView(state)],
   ["issues", "Common issues", issuesView],
+  ["value", "Value", valueView],
+  ["pain", "Pain and churn", painView],
   ["feed", "Live", feedView],
   ["compare", "LLMs", compareView],
   ["ideas", "Ideas", ideasView],
@@ -15,7 +17,8 @@ const state = {
 };
 const STATIC = window.__COUNCIL__ || null;
 const $ = (id) => document.getElementById(id);
-const tabsNow = () => TABS.filter(([id]) => (id !== "rounds" || state.rounds.length > 1) && (id !== "improving" || numberedRounds(state.rounds).length > 0));
+const BUYER_TABS = new Set(["value", "pain"]);
+const tabsNow = () => TABS.filter(([id]) => (id !== "rounds" || state.rounds.length > 1) && (id !== "improving" || numberedRounds(state.rounds).length > 0) && (!BUYER_TABS.has(id) || hasBuyerScores(state.data)));
 
 // Touches the page only when the markup changed, so polling never resets hover or animations.
 function setHtml(el, html) {
@@ -74,7 +77,7 @@ function drawHeader() {
   const issueCount = groupIssues(filtered()).length;
   setHtml($("tabs"), tabsNow().map(([id, name], i) => {
     const badge = id === "issues" && issueCount ? ` <span class="count">${issueCount}</span>` : id === "feed" && thinking ? ` <span class="pulse"></span>` : id === "rounds" ? ` <span class="count">${rounds.length}</span>` : "";
-    return `<button type="button" role="tab" data-tab="${id}" aria-selected="${state.tab === id}" title="Press ${i + 1}">${name}${badge}</button>`;
+    return `<button type="button" role="tab" data-tab="${id}" aria-selected="${state.tab === id}"${i < 9 ? ` title="Press ${i + 1}"` : ""}>${name}${badge}</button>`;
   }).join(""));
   const active = activeFilters();
   setHtml($("filter-toggle"), `${UI.filter}Filter${active ? ` <span class="count-on">${active}</span>` : ""}`);
@@ -122,6 +125,8 @@ function drawDrawer() {
 
 function drawAll() {
   hideTip();
+  // A round from before these scores has no Value tab to stay on.
+  if (!tabsNow().some(([id]) => id === state.tab)) state.tab = "issues";
   drawHeader();
   drawFilters();
   drawView();

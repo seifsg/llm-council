@@ -35,15 +35,15 @@ function breadth(issue, data) {
 }
 
 // People saying the same words share one row, each still one click from their full answer.
-function voiceRows(voices, data) {
+function voiceRows(voices, data, keepWord = "→ ") {
   const rows = new Map();
   for (const v of voices) {
     const key = `${v.wrong}|${v.fix}`.toLowerCase();
     rows.set(key, [...(rows.get(key) || []), v]);
   }
   return [...rows.values()].map((same) => {
-    const faces = same.map(({ seat: s, p, type, offer }) => `<button class="face" type="button" data-open="${esc(s.key)}" style="${hue(s.nature)}" ${tip(`${whoPlain(s)}, ${plain(s.nature)}${data.engines.length > 1 ? `, ${llmInfo(s.engine, data).name}` : ""}. ${p}, ${type}, ${offer}`)}>${natureIcon(s.nature, plain(s.nature))}<span>${esc(s.name || plain(s.persona))}</span>${data.engines.length > 1 ? `<span class="llm-mark" aria-hidden="true">${llmFace(s.engine, data)}</span>` : ""}</button>`).join("");
-    return `<div class="voice-row"><p>${esc(same[0].wrong)}</p>${same[0].fix ? `<em>→ ${esc(same[0].fix)}</em>` : ""}<div class="faces">${faces}</div></div>`;
+    const faces = same.map(({ seat: s, p, type, offer }) => `<button class="face" type="button" data-open="${esc(s.key)}" style="${hue(s.nature)}" ${tip(`${whoPlain(s)}, ${plain(s.nature)}${data.engines.length > 1 ? `, ${llmInfo(s.engine, data).name}` : ""}. ${[p, type, offer].filter(Boolean).join(", ")}`)}>${natureIcon(s.nature, plain(s.nature))}<span>${esc(s.name || plain(s.persona))}</span>${data.engines.length > 1 ? `<span class="llm-mark" aria-hidden="true">${llmFace(s.engine, data)}</span>` : ""}</button>`).join("");
+    return `<div class="voice-row"><p>${esc(same[0].wrong)}</p>${same[0].fix ? `<em>${esc(keepWord)}${esc(same[0].fix)}</em>` : ""}<div class="faces">${faces}</div></div>`;
   }).join("");
 }
 
@@ -96,7 +96,7 @@ function issuesView(seats, data, open) {
   const auto = groups.length
     ? `<p class="summary"><b>${count(groups.length, "issue")}</b>, ${stops} stopping someone, most people first ${info("Grouped live by shared words, so similar wording can stay split. The final ranking merges them. Click an issue to hear each person.")}</p>` + groups.map((g) => issueCard(g, data, open)).join("")
     : empty("No findings yet. They appear here as seats write them.");
-  return ranked(data.issues, seats, data) + auto + heldUp(seats, data, open);
+  return ranked(data.issues, seats, data) + auto + heldUp(seats, data, open) + foundOutside(seats, data, open);
 }
 
 const statusLine = (s) => {
@@ -135,7 +135,8 @@ function roomView(seats, data) {
 const pretty = (text) => esc(text)
   .replace(/^## (.*)$/gm, "<b>$1</b>")
   .replace(/^\s*-?\s*(P[123])\|(\w+)\|([^|\n]*)\|([^|\n]*)\|?(.*)$/gm, (_, p, type, offer, wrong, fix) =>
-    `<b>${p}</b> ${wrong}${fix ? ` → ${fix}` : ""} <span class="quiet">${type}, ${offer}</span>`);
+    `<b>${p}</b> ${wrong}${fix ? ` → ${fix}` : ""} <span class="quiet">${type}, ${offer}</span>`)
+  .replace(/^\s*-\s*([^|\n]+)\|([^|\n]*)\|?(.*)$/gm, (_, offer, why, keep) => `<b>${offer.trim()}</b> ${why.trim()}${keep.trim() ? ` → ${keep.trim()}` : ""}`);
 
 function feedView(seats, data) {
   const live = (s) => (s.status === "thinking" ? 1 : 0);
@@ -150,7 +151,7 @@ function feedView(seats, data) {
 }
 
 // Each nature's own closing: ideas, better questions, first steps, what they still need to know.
-const STANDARD = new Set(["Verdict", "Problems", "Findings", "Retell", "Right now", "Not read", "Sources", "Pros and cons"]);
+const STANDARD = new Set(["Verdict", "Problems", "Findings", "Retell", "Right now", "Not read", "Sources", "Pros and cons", "The pain", "Why I cancel", "No-brainer", "Found outside"]);
 
 function ideasView(seats, data, open) {
   const natures = orderNatures([...new Set(seats.map((s) => s.nature))], data);
@@ -167,9 +168,26 @@ function ideasView(seats, data, open) {
 
 const decisionCell = (d) => (d ? `<td class="d-${esc(d)}">${esc(d)}</td>` : `<td class="quiet">·</td>`);
 
-function scoresView(seats, data) {
+// Neutral leads, open. Every other nature folds apart: each has a job, so its numbers never join the headline.
+function natureBlocks(seats, data, open, name, render) {
+  const natures = orderNatures([...new Set(seats.map((s) => s.nature))], data);
+  const ordered = [...natures.filter((n) => n === "neutral"), ...natures.filter((n) => n !== "neutral")];
+  return ordered.map((n) => {
+    const own = seats.filter((s) => s.nature === n);
+    const body = render(own, n);
+    if (!body) return "";
+    const title = `<span class="nat" style="${hue(n)}">${icon(n)}</span> ${label(n)} <span class="quiet">${count(own.length, "answer")}</span>`;
+    return n === "neutral" ? `<div class="headline-nature"><h2 class="nature-head">${title} <span class="pill">Headline</span></h2>${body}</div>` : fold(`${name}:${n}`, title, body, open);
+  }).join("");
+}
+
+function scoresView(seats, data, open) {
   const rows = seats.filter((s) => s.parsed && Object.keys(s.parsed.scores).length);
-  if (!rows.length) return empty("Scores appear as Neutral seats finish. Other natures have a job, not a score.");
+  if (!rows.length) return empty("Scores appear as seats finish.");
+  return `<p class="summary">Neutral is the headline. Other natures stay apart, because each has a job ${info("act: do it now. talk: small next step. think: must think, ask or compare. no: would not. Hover a score for clarity and belief.")}</p>${natureBlocks(rows, data, open, "scores", (own) => scoresTable(own, data))}`;
+}
+
+function scoresTable(rows, data) {
   const offers = [...new Set(rows.flatMap((s) => Object.keys(s.parsed.decisions)))];
   const showDecision = rows.some((s) => s.parsed.decision);
   const heads = ["Person", "Score", ...(showDecision ? ["Decision"] : []), "Pick", ...offers, "Introduced"];
@@ -177,24 +195,25 @@ function scoresView(seats, data) {
   const body = rows.map((s) => {
     const p = s.parsed;
     return `<tr><td><button type="button" data-open="${esc(s.key)}" ${tip(whoPlain(s))}>${esc(s.name || plain(s.persona))}</button> ${engineMark(s, data)}</td>
-      <td class="num" ${tip(`Overall ${p.scores.overall ?? "?"}, clarity ${p.scores.clarity ?? "?"}, belief ${p.scores.belief ?? "?"}`)}>${esc(p.scores.overall ?? "·")}</td>
+      <td class="num" ${tip(["overall", "clarity", "belief"].filter((f) => f in p.scores).map((f) => `${f} ${p.scores[f]}`).join(", "))}>${esc(p.scores.overall ?? "·")}</td>
       ${showDecision ? decisionCell(p.decision) : ""}<td>${esc(p.firstPick || "·")}</td>${offers.map((o) => decisionCell(p.decisions[o])).join("")}${decisionCell(DECISION_WORDS.has(p.introduced) ? p.introduced : "")}</tr>`;
   }).join("");
-  return `<p class="summary">Only Neutral seats score ${info("act: do it now. talk: small next step. think: must think, ask or compare. no: would not. Hover a score for clarity and belief.")}</p>
-    <div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 function drawerView(s, data, open) {
   const twins = data.seats.filter((t) => t.id === s.id);
   const p = s.parsed;
   const scoreRow = p && (Object.keys(p.scores).length || p.firstPick) ? `<div class="meta score-row">
-    ${Object.entries(p.scores).map(([k, v]) => `<span class="pill"><b>${esc(v)}</b> ${esc(k)}</span>`).join("")}
+    ${Number.isFinite(p.scores.value) ? `<span class="pill"><b>${esc(p.scores.value)}</b> value</span>${equation(p.scores)}` : ""}
+    ${Object.entries(p.scores).filter(([k]) => k !== "value").map(([k, v]) => `<span class="pill"><b>${esc(v ?? "none")}</b> ${esc(k.replace(/_/g, " "))}</span>`).join("")}
+    ${Object.entries(p.prices).map(([k, v]) => `<span class="pill"><b>${esc(v.raw)}</b> ${esc(k.replace(/_/g, " "))}</span>`).join("")}
     ${p.firstPick ? `<span class="pill">Pick: <b>${esc(p.firstPick)}</b></span>` : ""}
     ${Object.entries(p.decisions).map(([k, v]) => `<span class="pill d-${esc(v)}">${esc(k)}: ${esc(v)}</span>`).join("")}
     ${p.introduced ? `<span class="pill">If introduced: ${esc(p.introduced)}</span>` : ""}${p.decision ? `<span class="pill d-${esc(p.decision)}">${esc(p.decision)}</span>` : ""}</div>` : "";
   const entries = p ? Object.entries(p.sections) : [];
   const section = ([name, body]) => `<h3>${esc(name)}</h3><pre>${pretty(body)}</pre>`;
-  const quiet = new Set(["Right now", "Not read", "Sources"]);
+  const quiet = new Set(["Right now", "Not read", "Sources", "Found outside"]);
   const main = entries.filter(([n]) => !quiet.has(n)).map(section).join("");
   const rest = entries.filter(([n]) => quiet.has(n));
   const sections = entries.length

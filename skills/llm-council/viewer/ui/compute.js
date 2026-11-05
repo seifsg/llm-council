@@ -27,12 +27,57 @@ function pairUp(A, B, keep) {
   return { check, same: all.filter(({ b }) => check.allows(b.persona)), blocked: all.filter(({ b }) => !check.allows(b.persona)) };
 }
 
-function change(pairs, field) {
-  const deltas = pairs.map(({ a, b }) => b.parsed.scores[field] - a.parsed.scores[field]).filter(Number.isFinite);
-  if (!deltas.length) return null;
+// Both sides of each matched answer that has this number. "none" and missing drop out.
+const bothSides = (pairs, read) => pairs.map(({ a, b }) => [read(a), read(b)]).filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y));
+
+function spreadOf(deltas) {
   const average = mean(deltas);
-  const spread = Math.sqrt(mean(deltas.map((d) => (d - average) ** 2)) / deltas.length);
-  return { average, spread, n: deltas.length };
+  return { average, spread: Math.sqrt(mean(deltas.map((d) => (d - average) ** 2)) / deltas.length), n: deltas.length };
+}
+
+function change(pairs, field) {
+  const deltas = bothSides(pairs, (s) => s.parsed.scores[field]).map(([x, y]) => y - x);
+  return deltas.length ? spreadOf(deltas) : null;
+}
+
+// up: which way is good for the seller. real: the smallest move that can count, on this number's own scale.
+const BUYER_MOVES = [
+  { field: "value", name: "Value", up: 1, real: 0.5 },
+  { field: "buy_chance", name: "Buy chance", up: 1, real: 5, unit: "%" },
+  { field: "churn_month1", name: "Churn, month 1", up: -1, real: 5, unit: "%" },
+  { field: "stay_12_months", name: "Stays 12 months", up: 1, real: 5, unit: "%" },
+  { field: "hard_to_leave", name: "Hard to leave", up: 1, real: 0.5 },
+];
+const PRICE_MOVES = [["no_brainer_price", "No-brainer price"], ["too_expensive_price", "Too expensive"]];
+const PRICE_REAL_SHARE = 0.1;
+
+// Medians of the same matched answers, with the same test as the headline: a real move the spread cannot explain.
+function moveOf(pairs, read, look) {
+  const both = bothSides(pairs, read);
+  if (!both.length) return null;
+  const [before, after] = [0, 1].map((side) => median(both.map((pair) => pair[side])));
+  const move = after - before;
+  const { average, spread } = spreadOf(both.map(([x, y]) => y - x));
+  const need = look.real ?? before * PRICE_REAL_SHARE;
+  const call = both.length < TOO_FEW ? "few" : Math.abs(move) < need || average * move <= 0 || Math.abs(average) < 1.96 * spread ? "same" : move * look.up > 0 ? "better" : "worse";
+  return { ...look, before, after, move, n: both.length, call };
+}
+
+// Prices move only within one cadence: monthly never compares with one-off.
+function priceMoves(pairs) {
+  return PRICE_MOVES.flatMap(([field, name]) => ["monthly", "once"].map((cadence) => {
+    const read = (s) => (s.parsed.prices[field]?.cadence === cadence ? s.parsed.prices[field].amount : NaN);
+    return moveOf(pairs, read, { name: `${name}, ${cadence}`, up: 1, unit: "$" });
+  })).filter(Boolean);
+}
+
+// Compared only when both rounds carry these numbers and the fingerprints match. Otherwise says why not.
+function buyerCompare(A, B, check, same) {
+  const lacking = [A, B].filter((R) => !hasBuyerScores(R));
+  if (lacking.length) return { moves: [], lacking };
+  if (check.reason) return { moves: [], reason: check.reason };
+  const moves = [...BUYER_MOVES.map((m) => moveOf(same, (s) => s.parsed.scores[m.field], m)).filter(Boolean), ...priceMoves(same)];
+  return { moves, unmatched: !moves.length };
 }
 
 function leanings(pairs, A, B) {
@@ -105,6 +150,7 @@ function compareRounds(A, B, keep = () => true) {
   const offersOneSided = [...A.meta.offers.filter((o) => !hasKey(B, o.key)), ...B.meta.offers.filter((o) => !hasKey(A, o.key))];
   return {
     A, B, inBoth, leftOut, check, same, blocked, metrics, offersOneSided,
+    buyers: buyerCompare(A, B, check, same),
     verdict: check.reason ? "findings" : verdictFrom(metrics.overall),
     link: linkProblems(A, B),
   };

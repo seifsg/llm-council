@@ -66,6 +66,30 @@ function tilesFor(c) {
   return `${scores ? `<div class="tiles">${scores}</div>` : ""}<div class="tiles">${problems}</div>`;
 }
 
+const MOVE_TONES = { better: "good", worse: "bad", same: "flat", few: "flat" };
+const MOVE_SIGNS = { better: "▲", worse: "▼", same: "●", few: "●" };
+
+function moveTile(m) {
+  if (m.call === "few") return tile(m.name, "Too few", "flat", `Only ${count(m.n, "matched answer")}`);
+  const way = m.up > 0 ? "higher is better" : "lower is better";
+  const unit = (n) => (m.unit === "$" ? `$${shown(n)}` : `${shown(n)}${m.unit || ""}`);
+  return tile(m.name, `${MOVE_SIGNS[m.call]} ${signed(m.move)}`, MOVE_TONES[m.call], `${unit(m.before)} to ${unit(m.after)}, ${way}${m.call === "same" ? ", within normal variation" : ""}`);
+}
+
+function buyerTiles(c) {
+  const { moves } = c.buyers;
+  if (!moves.length) return "";
+  return `<h2 class="section-title">Churn and price, medians of the same matched answers ${info(`Neutral seats only, same person on the same LLM. ${VALUE_NOTE}`)}</h2><div class="tiles">${moves.map(moveTile).join("")}</div>`;
+}
+
+function buyerNote(c, roundNames) {
+  const { lacking, reason, unmatched } = c.buyers;
+  const lead = "Churn, price and value not compared";
+  if (lacking?.length) return `${lead}: ${lacking.map(roundNames).join(" and ")} ${lacking.length > 1 ? "have" : "has"} none of them, because those seats were not asked.`;
+  if (reason) return `${lead}: ${reason.toLowerCase()}, so a change would only measure that.`;
+  return unmatched ? `${lead}: no matched answers carry them.` : "";
+}
+
 function topLine(c, nameA) {
   const t = c.link.top;
   if (!c.link.linked || !t.size) return "";
@@ -81,6 +105,8 @@ function notesFor(c, nameA, nameB) {
   if (c.offersOneSided.length) lines.push(`Not compared, in one round only: ${c.offersOneSided.map((o) => o.name).join(", ")}.`);
   if (c.metrics.overall && c.metrics.overall.n < SMALL_SAMPLE && !["few", "findings"].includes(c.verdict)) lines.push(`Small sample: ${count(c.metrics.overall.n, "matched answer")}. Treat this as a hint.`);
   if (!c.link.linked) lines.push("Problems are not linked between these rounds, so fixed and new are not shown.");
+  const buyer = buyerNote(c, (R) => (R === c.A ? nameA : nameB));
+  if (buyer) lines.push(buyer);
   return lines.length ? `<ul class="imp-notes">${lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>` : "";
 }
 
@@ -165,5 +191,5 @@ function improvingView(state) {
     : problemGroup("top", rankProblems(problemsOf(B, c.inBoth).list), fromB, state.open);
   const foot = c.link.linked ? `<p class="imp-foot">Fixed, reduced and worse are the ranker's judgment, linked by key across rounds, not proof.</p>` : "";
   return `${live(B, nameB)}${live(A, nameA)}<section class="hero ${tone}"><p class="eyebrow">Am I improving? ${esc(nameB)} against ${esc(nameA)}</p><h1><span aria-hidden="true">${sign}</span> ${esc(word)}</h1><p class="hero-text">${esc(headlineSentence(c))}</p></section>
-    ${tilesFor(c)}${topLine(c, nameA)}${notesFor(c, nameA, nameB)}${groups}${foot}`;
+    ${tilesFor(c)}${buyerTiles(c)}${topLine(c, nameA)}${notesFor(c, nameA, nameB)}${groups}${foot}`;
 }

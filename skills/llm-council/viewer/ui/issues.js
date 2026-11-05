@@ -12,25 +12,27 @@ function similarity(a, b) {
   return shared / (a.size + b.size - shared);
 }
 
-// Greedy: each finding joins the closest group above the threshold, or starts one.
-function groupIssues(seats) {
+// Greedy: each line joins the closest group above the threshold, or starts one.
+function cluster(voices) {
   const groups = [];
-  for (const seat of seats) {
-    if (!seat.parsed) continue;
-    for (const problem of seat.parsed.problems) {
-      const own = tokens(problem.wrong);
-      let best = null;
-      let bestScore = MATCH;
-      for (const g of groups) {
-        const score = similarity(own, g.tokens);
-        if (score >= bestScore) { best = g; bestScore = score; }
-      }
-      if (!best) { best = { tokens: new Set(own), voices: [] }; groups.push(best); }
-      own.forEach((w) => best.tokens.add(w));
-      best.voices.push({ seat, ...problem });
+  for (const voice of voices) {
+    const own = tokens(voice.wrong);
+    let best = null;
+    let bestScore = MATCH;
+    for (const g of groups) {
+      const score = similarity(own, g.tokens);
+      if (score >= bestScore) { best = g; bestScore = score; }
     }
+    if (!best) { best = { tokens: new Set(own), voices: [] }; groups.push(best); }
+    own.forEach((w) => best.tokens.add(w));
+    best.voices.push(voice);
   }
-  return groups.map(summarize).sort((a, b) => b.people - a.people || a.topP.localeCompare(b.topP) || b.natures.length - a.natures.length);
+  return groups;
+}
+
+function groupIssues(seats) {
+  const voices = seats.flatMap((seat) => (seat.parsed ? seat.parsed.problems.map((problem) => ({ seat, ...problem })) : []));
+  return cluster(voices).map(summarize).sort((a, b) => b.people - a.people || a.topP.localeCompare(b.topP) || b.natures.length - a.natures.length);
 }
 
 function summarize(group) {

@@ -61,6 +61,8 @@ The template handles the known weaknesses of simulated judges. Keep these defenc
 - `live/<engine>/<persona>--<nature>.txt`: reply text, appended as it streams.
 - On finish: `answers/<engine>/<persona>--<nature>.md`, and delete the live file. On failure: `answers/<engine>/<persona>--<nature>.error` with the reason.
 
+**Optional scores.** Seats may also give `real_problem`, `pain`, `solves_it`, `dream_outcome`, `likelihood`, `time_delay`, `effort`, `buy_chance`, `no_brainer_price`, `too_expensive_price`, `churn_month1`, `stay_12_months`, `hard_to_leave`, and the sections `## The pain`, `## Why I cancel` (`- <offer>|<why>|<what keeps me>`), `## No-brainer` (`dream:`, `likelihood:`, `time:`, `effort:`, `price:`) and `## Found outside`. The viewer then adds its Value and Pain and churn tabs. Found outside never counts as an issue. Neutral stays the headline and natures are never averaged together.
+
 **Viewer.** Before the first seat, run this in the background and give the user the link. Node 18 or later, no install. See it first with `--demo`.
 
 ```text

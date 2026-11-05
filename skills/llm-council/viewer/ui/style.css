@@ -281,3 +281,21 @@ td small.quiet { display: block; margin-top: 2px; font-size: 11px; }
 :root[data-theme="dark"] { --good: #4cc38a; --bad: #f2766b; }
 @media (max-width: 700px) { .hero { padding: 18px; } .hero h1 { font-size: 28px; } .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .tile-value { font-size: 20px; } }
+
+/* Value and pain. Factor colors always sit beside a name or a number. */
+.tiles.hued .tile { box-shadow: inset 0 3px 0 var(--c), 0 1px 2px rgb(0 0 0 / .03); }
+.tiles.hued { margin-top: 0; }
+.formula { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 16px; padding: 12px 16px; margin-bottom: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.eq { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.eq-f { display: inline-block; border-radius: 5px; padding: 0 6px; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--c) 72%, var(--ink)); background: color-mix(in srgb, var(--c) 16%, transparent); white-space: nowrap; }
+.eq-f.weak { color: #fff; background: color-mix(in srgb, var(--c) 82%, #000); }
+.nature-head { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 650; margin: 0 2px 8px; }
+.headline-nature { margin-bottom: 10px; }
+.sub-head { font-size: 12.5px; font-weight: 600; color: var(--ink-2); margin: 14px 2px 6px; }
+.sec-icon { display: inline-block; vertical-align: -2px; margin-right: 6px; color: var(--accent); font-size: 15px; }
+.fold .sec-icon { margin-right: 0; }
+.quotes { margin-top: 8px; }
+.line-lead { display: block; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.line-card[style] { box-shadow: inset 3px 0 0 var(--c), 0 1px 2px rgb(0 0 0 / .03); }
+.score-row .pill { white-space: normal; }
+.score-row .eq { flex-basis: 100%; }

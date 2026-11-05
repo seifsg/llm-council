@@ -75,14 +75,15 @@ function stackBar(words) {
 function llmTotals(seats, data) {
   const rows = data.engines.map((engine) => {
     const own = seats.filter((s) => s.engine === engine && s.parsed);
-    const scores = own.map((s) => s.parsed.scores.overall).filter((n) => Number.isFinite(n));
+    const headline = own.filter((s) => s.nature === "neutral");
+    const scores = headline.map((s) => s.parsed.scores.overall).filter((n) => Number.isFinite(n));
     const findings = own.reduce((sum, s) => sum + s.parsed.problems.length, 0);
     const average = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "·";
     return `<tr><td>${llmBadge(engine, data)}</td><td class="num" ${tip(`${own.length} answers so far`)}>${average}</td>
-      <td>${stackBar(own.flatMap((s) => Object.values(s.parsed.decisions)))}</td>
+      <td>${stackBar(headline.flatMap((s) => Object.values(s.parsed.decisions)))}</td>
       <td class="num">${own.length ? (findings / own.length).toFixed(1) : "·"}</td></tr>`;
   }).join("");
-  return `<div class="table-wrap"><table><thead><tr><th scope="col">LLM</th><th scope="col">Avg score</th>
+  return `<div class="table-wrap"><table><thead><tr><th scope="col">LLM</th><th scope="col">Neutral avg ${info("Neutral seats only, for score and decisions. Other natures have a job, so they stay out of this average.")}</th>
     <th scope="col">Decisions ${info("Share of act, talk, think and no across every option, in that order. Hover a bar for counts.")}</th><th scope="col">Findings each</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
@@ -146,8 +147,4 @@ function compareView(seats, data, open) {
   return llmTotals(seats, data) + agree + onlyOneLlm(seats, data, open) + list;
 }
 
-function groupById(seats) {
-  const map = new Map();
-  for (const s of seats) map.set(s.id, [...(map.get(s.id) || []), s]);
-  return map;
-}
+const groupById = (seats) => groupBy(seats, (s) => s.id);

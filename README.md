@@ -12,7 +12,7 @@ Ask one model and you get one careful, agreeable voice. A council gets real spre
 |---|---|
 | 🗡️ Contrarian | Hunts the fatal flaw. Never says it's fine. |
 | 🌟 Believer | Shows how it pays off and where it could be bigger. |
-| ⚖️ Neutral | Weighs pros and cons. The only nature that gives scores. |
+| ⚖️ Neutral | Weighs pros and cons. Its scores are the headline. |
 | ❓ Confused | Asks everything a newcomer would not understand. |
 | 🔬 First Principles | Asks what is really being solved, and whether this is the right question. |
 | 🛠️ Executor | Walks through Monday morning and names each stall. |
@@ -37,7 +37,9 @@ Node 18 or later, nothing to install. It runs on your machine only, and `--demo`
 | LLMs | Run one LLM or many: where do they disagree on the same person? |
 | Ideas | What better framings, first steps and questions came up? |
 | Room | Who said what, by persona and nature? |
-| Scores | How did Neutral seats decide on each option? |
+| Value | Where seats report the value equation: dream x likelihood / time x effort, as medians per option and persona, and what holds a buyer back most |
+| Pain and churn | What really hurts, why people would cancel per option, and what would make a no feel stupid |
+| Scores | How did each nature decide on each option? Neutral leads, other natures stay apart |
 | Rounds | What changed from one round to another? |
 
 Point the viewer at a folder holding many rounds to list them and compare any two: score changes for the same person on the same LLM, decisions per option, first picks, issues no longer raised, new or still open, and what changed in the offer. Scores only compare when the round's recorded prompt and persona fingerprints match. Otherwise it shows findings only.
