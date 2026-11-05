@@ -1,4 +1,4 @@
-// Holds the state, polls the run while it is live, and redraws only what changed.
+// Holds the state, polls the open round while it is live, and redraws only what changed.
 const TABS = [
   ["issues", "Common issues", issuesView],
   ["feed", "Live", feedView],
@@ -6,9 +6,15 @@ const TABS = [
   ["ideas", "Ideas", ideasView],
   ["room", "Room", roomView],
   ["scores", "Scores", scoresView],
+  ["rounds", "Rounds", () => roundsView(state, keep)],
 ];
-const state = { tab: "issues", data: null, raw: "", open: new Set(), seat: null, off: new Set(), persona: "", engine: "", q: "", optionsKey: "", filtersOpen: false };
+const state = {
+  tab: "issues", data: null, raw: "", open: new Set(), seat: null, off: new Set(), persona: "", engine: "", q: "", optionsKey: "", filtersOpen: false,
+  rounds: [], roundId: null, cmpA: null, cmpB: null, cache: {}, tick: 0,
+};
+const STATIC = window.__COUNCIL__ || null;
 const $ = (id) => document.getElementById(id);
+const tabsNow = () => TABS.filter(([id]) => id !== "rounds" || state.rounds.length > 1);
 
 // Touches the page only when the markup changed, so polling never resets hover or animations.
 function setHtml(el, html) {
@@ -23,28 +29,39 @@ function hash(text) {
   return h;
 }
 
-function ingest(data) {
+function parsedRun(data) {
   for (const s of data.seats) s.parsed = s.text ? parseAnswer(s.text) : null;
-  state.data = data;
+  return data;
 }
+
+async function loadRound(id) {
+  const data = STATIC ? STATIC.runs[id] : await (await fetch(`api/run?round=${encodeURIComponent(id)}`, { cache: "no-store" })).json();
+  state.cache[id] = parsedRun(data);
+  return state.cache[id];
+}
+
+const keep = (s) =>
+  !state.off.has(s.nature) &&
+  (!state.persona || s.persona === state.persona) &&
+  (!state.engine || s.engine === state.engine);
 
 function filtered() {
   const q = state.q.toLowerCase();
-  return state.data.seats.filter((s) =>
-    !state.off.has(s.nature) &&
-    (!state.persona || s.persona === state.persona) &&
-    (!state.engine || s.engine === state.engine) &&
-    (!q || `${s.name} ${s.persona} ${s.nature} ${s.text}`.toLowerCase().includes(q)));
+  return state.data.seats.filter((s) => keep(s) && (!q || `${s.name} ${s.persona} ${s.nature} ${s.text}`.toLowerCase().includes(q)));
 }
 
 const activeFilters = () => state.off.size + (state.persona ? 1 : 0) + (state.engine ? 1 : 0) + (state.q ? 1 : 0);
 
 function drawHeader() {
-  const { data } = state;
+  const { data, rounds, roundId } = state;
   $("title").textContent = data.title;
   document.title = `${data.title} · Council Viewer`;
   $("decision").textContent = data.decision;
   $("decision").dataset.tip = data.decision;
+  const pick = $("round-pick");
+  pick.hidden = rounds.length < 2;
+  setHtml(pick, rounds.map((r) => `<option value="${esc(r.id)}"${r.id === roundId ? " selected" : ""}>${esc(roundLabel(r))}</option>`).join(""));
+  pick.value = roundId;
   const total = data.seats.length || 1;
   const n = (st) => data.seats.filter((s) => s.status === st).length;
   const [done, thinking, failed] = [n("done"), n("thinking"), n("failed")];
@@ -54,8 +71,8 @@ function drawHeader() {
   $("counts").dataset.tip = `${done} of ${data.seats.length} done, ${thinking} writing now, ${data.seats.length - done - thinking - failed} waiting, ${failed} failed`;
   setHtml($("llms"), llmStrip(data));
   const issueCount = groupIssues(filtered()).length;
-  setHtml($("tabs"), TABS.map(([id, name], i) => {
-    const badge = id === "issues" && issueCount ? ` <span class="count">${issueCount}</span>` : id === "feed" && thinking ? ` <span class="pulse"></span>` : "";
+  setHtml($("tabs"), tabsNow().map(([id, name], i) => {
+    const badge = id === "issues" && issueCount ? ` <span class="count">${issueCount}</span>` : id === "feed" && thinking ? ` <span class="pulse"></span>` : id === "rounds" ? ` <span class="count">${rounds.length}</span>` : "";
     return `<button type="button" role="tab" data-tab="${id}" aria-selected="${state.tab === id}" title="Press ${i + 1}">${name}${badge}</button>`;
   }).join(""));
   const active = activeFilters();
@@ -82,6 +99,15 @@ function drawFilters(force) {
 
 function drawView() {
   setHtml($("view"), TABS.find(([id]) => id === state.tab)[2](filtered(), state.data, state.open));
+  if (state.tab === "rounds") loadCompared();
+}
+
+// Fetches a compared round once, then redraws. The open round stays fresh through polling.
+async function loadCompared() {
+  const missing = [state.cmpA, state.cmpB].filter((id) => id && !state.cache[id]);
+  if (!missing.length) return;
+  await Promise.all(missing.map(loadRound));
+  drawView();
 }
 
 function drawDrawer() {
@@ -119,14 +145,29 @@ document.addEventListener("focusin", (e) => tipTarget(e)?.dataset.tip && showTip
 document.addEventListener("focusout", hideTip);
 document.addEventListener("scroll", hideTip, true);
 
+async function openRound(id) {
+  if (!state.rounds.some((r) => r.id === id)) return;
+  state.roundId = id;
+  state.seat = null;
+  state.raw = "";
+  history.replaceState(null, "", `?round=${encodeURIComponent(id)}`);
+  state.data = state.cache[id] || (await loadRound(id));
+  drawAll();
+}
+
 document.addEventListener("click", (e) => {
-  const t = e.target.closest("[data-tab],[data-toggle],[data-open],[data-close],[data-nature],[data-clear],#filter-toggle");
+  const t = e.target.closest("[data-tab],[data-toggle],[data-open],[data-close],[data-nature],[data-clear],[data-round],#filter-toggle");
   if (!t) {
     // Touch screens have no hover: a tap shows the tooltip.
     if (tipTarget(e)?.dataset.tip) showTip(tipTarget(e));
     return;
   }
-  if (t.dataset.tab) state.tab = t.dataset.tab;
+  if (t.dataset.round) return openRound(t.dataset.round);
+  if (t.dataset.tab) {
+    state.tab = t.dataset.tab;
+    // A compared round may have moved on since it was fetched.
+    if (state.tab === "rounds") state.cache = { [state.roundId]: state.data };
+  }
   if (t.dataset.toggle !== undefined) state.open.has(t.dataset.toggle) ? state.open.delete(t.dataset.toggle) : state.open.add(t.dataset.toggle);
   if (t.dataset.open) state.seat = t.dataset.open;
   if ("close" in t.dataset) state.seat = null;
@@ -146,9 +187,12 @@ document.addEventListener("click", (e) => {
   drawDrawer();
 });
 document.addEventListener("input", (e) => {
+  if (e.target.id === "round-pick") return openRound(e.target.value);
   if (e.target.id === "search") state.q = e.target.value;
   if (e.target.id === "persona") state.persona = e.target.value;
   if (e.target.id === "engine") state.engine = e.target.value;
+  if (e.target.id === "cmp-a") state.cmpA = e.target.value;
+  if (e.target.id === "cmp-b") state.cmpB = e.target.value;
   drawHeader();
   drawView();
 });
@@ -164,8 +208,8 @@ document.addEventListener("keydown", (e) => {
     drawHeader();
     $("search")?.focus();
   }
-  const tab = TABS[Number(e.key) - 1];
-  if (tab) {
+  const tab = tabsNow()[Number(e.key) - 1];
+  if (tab && state.data) {
     state.tab = tab[0];
     drawHeader();
     drawView();
@@ -186,12 +230,32 @@ $("theme").addEventListener("click", () => {
   remember.set(root.dataset.theme);
 });
 
+// Opens the round named in the link, else the newest numbered one, compared with the one before it.
+function chooseRounds(rounds) {
+  state.rounds = rounds;
+  if (state.roundId) return;
+  const asked = new URLSearchParams(location.search).get("round");
+  const numbered = rounds.filter((r) => r.round !== null);
+  const latest = numbered.at(-1) || rounds.at(-1);
+  state.roundId = rounds.some((r) => r.id === asked) ? asked : latest?.id ?? null;
+  const open = rounds.findIndex((r) => r.id === state.roundId);
+  const earlier = rounds.slice(0, open).reverse().find((r) => r.round !== null) || rounds.find((r) => r.id !== state.roundId);
+  state.cmpB = state.roundId;
+  state.cmpA = earlier?.id ?? state.roundId;
+}
+
 async function poll() {
   try {
-    const raw = await (await fetch("api/run", { cache: "no-store" })).text();
+    if (state.tick++ % 4 === 0 || !state.roundId) chooseRounds(await (await fetch("api/rounds", { cache: "no-store" })).json());
+    if (!state.roundId) {
+      $("view").innerHTML = empty("No rounds found in this folder yet.");
+      return;
+    }
+    const raw = await (await fetch(`api/run?round=${encodeURIComponent(state.roundId)}`, { cache: "no-store" })).text();
     if (raw !== state.raw) {
       state.raw = raw;
-      ingest(JSON.parse(raw));
+      state.data = parsedRun(JSON.parse(raw));
+      state.cache[state.roundId] = state.data;
       drawAll();
     }
     $("offline").hidden = true;
@@ -201,9 +265,12 @@ async function poll() {
 }
 
 // A static export carries its data; a served page polls for it.
-if (window.__COUNCIL__) {
-  ingest(window.__COUNCIL__);
-  drawAll();
+if (STATIC) {
+  chooseRounds(STATIC.rounds);
+  if (state.roundId) loadRound(state.roundId).then((data) => {
+    state.data = data;
+    drawAll();
+  });
 } else {
   poll();
   setInterval(poll, 1500);

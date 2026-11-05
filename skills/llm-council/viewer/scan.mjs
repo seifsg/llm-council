@@ -42,6 +42,43 @@ function readSeat(root, engine, id, name) {
   return seat;
 }
 
+// A round's own copy wins. A run from before rounds kept copies falls back to its draft's folder.
+function ownText(root, ...names) {
+  for (const dir of [root, join(root, "..")]) {
+    for (const name of names) {
+      try {
+        return { text: readFileSync(join(dir, name), "utf8"), own: dir === root };
+      } catch {
+        continue;
+      }
+    }
+  }
+  return { text: "", own: false };
+}
+
+// What a comparison needs to know about this round.
+function roundMeta(root, run) {
+  const offer = ownText(root, "offer.md");
+  const offers = ownText(root, "offers.txt").text.split(/\r?\n/).filter(Boolean).map((line) => {
+    const [key, name] = line.split("|");
+    return { key: key.trim(), name: (name || key).trim() };
+  });
+  return {
+    round: Number.isInteger(run.round) ? run.round : null,
+    kind: run.kind || null,
+    date: run.date || null,
+    effort: run.effort || null,
+    baseline: Boolean(run.baseline),
+    hashes: run.hashes || null,
+    hashesNote: run.hashesNote || "",
+    offers,
+    offerText: offer.text,
+    offerOwn: offer.own,
+    why: ownText(root, "why.md", "frame.md").text,
+    report: ownText(root, "report.md").own ? ownText(root, "report.md").text : "",
+  };
+}
+
 // Seats come from run.json when it lists them, plus any file already on disk.
 export function scanRun(root) {
   const run = readJson(join(root, "run.json")) || {};
@@ -65,5 +102,6 @@ export function scanRun(root) {
     llms: run.llms || {},
     seats,
     issues: readJson(join(root, "issues.json")),
+    meta: roundMeta(root, run),
   };
 }

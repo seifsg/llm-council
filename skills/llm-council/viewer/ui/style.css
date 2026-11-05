@@ -203,6 +203,23 @@ td[class*="d-"] { text-align: center; font-size: 12px; font-weight: 550; border-
 .big-score { font-size: 20px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1; }
 .big-score small { font-size: 11.5px; font-weight: 400; color: var(--ink-3); letter-spacing: 0; }
 
+/* Rounds */
+.round-pick { display: block; max-width: 100%; background: none; border: 0; padding: 0; margin-bottom: 1px; font-size: 12px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.is-current td { background: var(--page); font-weight: 600; }
+th.num { text-align: right; }
+.cmp-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 18px; }
+.cmp-pick select { background: var(--raised); border: 1px solid var(--line); border-radius: 7px; padding: 3px 8px; font-size: 12.5px; color: var(--ink); max-width: 100%; }
+.notice { border: 1px solid var(--ink-3); border-radius: 8px; padding: 8px 12px; font-size: 13px; margin: 8px 0; background: var(--surface); }
+.note-line { margin: 6px 2px; }
+.nat-cell { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.nat-cell .nat { width: 18px; height: 18px; font-size: 12px; }
+.delta { font-size: 14px; }
+.diff { font-size: 13px; padding: 2px 8px; border-radius: 4px; margin: 2px 0; }
+.diff.add { background: color-mix(in srgb, var(--believer) 14%, transparent); }
+.diff.del { background: color-mix(in srgb, var(--contrarian) 14%, transparent); text-decoration: line-through; text-decoration-color: var(--ink-3); }
+.plain { white-space: pre-wrap; word-break: break-word; margin: 0; font: inherit; font-size: 13px; color: var(--ink-2); max-height: 420px; overflow-y: auto; }
+td small.quiet { display: block; margin-top: 2px; font-size: 11px; }
+
 /* Drawer */
 .scrim { position: fixed; inset: 0; z-index: 9; background: rgb(0 0 0 / .28); animation: fade .15s ease; }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100%); background: var(--surface); box-shadow: -10px 0 40px rgb(0 0 0 / .22); padding: 0 20px 20px; overflow-y: auto; z-index: 10; animation: slide .18s ease; scrollbar-width: thin; }

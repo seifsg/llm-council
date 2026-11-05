@@ -57,15 +57,17 @@ The template handles the known weaknesses of simulated judges. Keep these defenc
 
 **Files the runner writes**, so the viewer shows them live:
 
-- `run.json` before the first seat: `{"title", "decision", "engines": [...], "llms": {"<engine>": {"name": "<model shown to the user>"}}, "natures": [...], "people": {"<persona>--<nature>": "<first name>"}}`. Same engine folder names as below. An optional `"icon"` beside `name` takes a base64 image data URI; otherwise common LLMs get a simple mark.
+- `run.json` before the first seat: `{"title", "decision", "kind": "round"|"pilot", "round": <number, or null for a pilot>, "date": "<ISO>", "effort", "hashes": {"prompt": "<hash of the seat prompt template>", "lives": {"<persona>": "<hash of its facts and interviews>"}}, "engines": [...], "llms": {"<engine>": {"name": "<model shown to the user>"}}, "natures": [...], "people": {"<persona>--<nature>": "<first name>"}}`. Same engine folder names as below. An optional `"icon"` beside `name` takes a base64 image data URI; otherwise common LLMs get a simple mark.
 - `live/<engine>/<persona>--<nature>.txt`: reply text, appended as it streams.
 - On finish: `answers/<engine>/<persona>--<nature>.md`, and delete the live file. On failure: `answers/<engine>/<persona>--<nature>.error` with the reason.
 
 **Viewer.** Before the first seat, run this in the background and give the user the link. Node 18 or later, no install. See it first with `--demo`.
 
 ```text
-node <skill-folder>/viewer/serve.mjs .council/<run-name>
+node <skill-folder>/viewer/serve.mjs .council
 ```
+
+Pointed at a parent folder it lists every round and compares any two. Pointed at one run folder it shows just that run.
 
 **Pilot.** Before the first real run, and after any change to prompt, model or engine, run 3 seats on each engine: a Confused, a Believer and a Neutral. Read every sentence. It passes when:
 
@@ -130,6 +132,10 @@ Real reactions outrank every seat. When the user reports a call, sale, refusal, 
 
 Before a real conversation, offer the top unknowns as questions about past behaviour, not opinions of the idea. With a real person's consent and names removed, an interview with them makes a stronger seat than an invented one.
 
+## Keeping rounds
+
+Each run of a draft is a round in its own folder, and old rounds are never overwritten. Number them in order, and give a pilot no number. At the start, copy the materials and frame into the round's folder and have seats read that copy, so later edits cannot change its history. Keep `report.md` and `issues.json` there too. Refuse to start in a folder where every requested seat has answered. A resume is only for missing seats, and only if the fingerprints still match.
+
 ## Comparing drafts
 
-Compare only the same person on the same engine, with the same prompt, facts, interview and scale. If any changed, compare findings instead and say why. Never present a score rise as proof of demand: it may only mean the seats saw better wording.
+Compare only the same person on the same engine, with the same prompt, facts, interview and scale. If any changed, compare findings instead and say why. The viewer's Rounds tab applies this from the fingerprints in `run.json`, and marks options that exist in only one round rather than comparing them. Never present a score rise as proof of demand: it may only mean the seats saw better wording.
