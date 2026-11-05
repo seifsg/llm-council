@@ -21,6 +21,10 @@ const UI = {
   theme: svg('<circle cx="8" cy="8" r="6.2"/><path d="M8 1.8a6.2 6.2 0 0 1 0 12.4z" fill="currentColor"/>'),
   fork: svg('<circle cx="4" cy="3" r="1.5"/><circle cx="12" cy="3" r="1.5"/><circle cx="8" cy="13" r="1.5"/><path d="M4 4.5c0 3 4 3 4 7M12 4.5c0 3-4 3-4 7"/>'),
   diamond: svg('<path d="M8 2l6 6-6 6-6-6z"/>'),
+  pain: svg('<path d="M8 1.5c.5 3-3.5 4.5-3.5 8a3.5 3.5 0 0 0 7 0c0-1.5-.8-2.5-1.5-3.3C10 7.5 9 8 8.5 7.5 8 7 8.8 4 8 1.5z"/>'),
+  leave: svg('<path d="M9.5 2.5h-6v11h6M7 8h7.5M12 5.5L14.5 8 12 10.5"/>'),
+  spark: svg('<path d="M8 1.5l1.6 4.9L14.5 8l-4.9 1.6L8 14.5l-1.6-4.9L1.5 8l4.9-1.6z"/>'),
+  globe: svg('<circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c2 2 2.8 4 2.8 6.2S10 12.2 8 14.2C6 12.2 5.2 10.2 5.2 8S6 3.8 8 1.8z"/>'),
   alert: svg('<path d="M8 2L1.5 13.5h13zM8 6.5v3.5M8 12v.01"/>'),
 };
 
