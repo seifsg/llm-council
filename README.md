@@ -37,6 +37,11 @@ Node 18 or later, nothing to install. It runs on your machine only, and `--demo`
 | Ideas | What better framings, first steps and questions came up? |
 | Room | Who said what, by persona and nature? |
 | Scores | How did Neutral seats decide on each option? |
+| Rounds | What changed from one round to another? |
+
+Point the viewer at a folder holding many rounds to list them and compare any two: score changes for the same person on the same LLM, decisions per option, first picks, issues no longer raised, new or still open, and what changed in the offer. Scores only compare when the round's recorded prompt and persona fingerprints match. Otherwise it shows findings only.
+
+![Rounds view, with invented demo data](docs/viewer-rounds.jpg)
 
 It stays quiet by default: indicators and icons up front, with names and numbers in tooltips and full answers one click away. Press `/` to search.
 

@@ -1,16 +1,19 @@
 #!/usr/bin/env node
-// Shows a council run live in the browser, or writes it as one shareable HTML file.
-// Usage: node serve.mjs <run-folder> [--port 4173] | --static <out.html> | --demo
+// Shows council rounds live in the browser, or writes them as one shareable HTML file.
+// The folder can be one run, or a parent holding many rounds to list and compare.
+// Usage: node serve.mjs <folder> [--port 4173] | --static <out.html> | --demo
 import { createServer } from "node:http";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scanRun } from "./scan.mjs";
+import { findRounds, roundDir } from "./rounds.mjs";
 import { startDemo } from "./demo.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const ASSETS = { "/style.css": "text/css", "/icons.js": "text/javascript", "/parse.js": "text/javascript", "/issues.js": "text/javascript", "/views.js": "text/javascript", "/compare.js": "text/javascript", "/app.js": "text/javascript" };
+const SCRIPTS = ["icons.js", "parse.js", "issues.js", "views.js", "compare.js", "rounds.js", "app.js"];
+const ASSETS = { "/style.css": "text/css", ...Object.fromEntries(SCRIPTS.map((f) => [`/${f}`, "text/javascript"])) };
 const asset = (name) => readFileSync(join(HERE, "ui", name), "utf8");
 
 const args = process.argv.slice(2);
@@ -22,14 +25,16 @@ const demo = args.includes("--demo");
 const root = demo ? mkdtempSync(join(tmpdir(), "llm-council-demo-")) : args.find((a, i) => !a.startsWith("--") && !args[i - 1]?.startsWith("--"));
 
 if (!root || !existsSync(root)) {
-  console.error("Usage: node serve.mjs <run-folder> [--port 4173] | --static <out.html> | --demo");
+  console.error("Usage: node serve.mjs <folder> [--port 4173] | --static <out.html> | --demo");
   process.exit(1);
 }
 
-// Inlines every asset and the data, so the file opens with no server.
+// Inlines every asset and every round, so the file opens with no server.
 function writeStatic(out) {
-  const data = JSON.stringify(scanRun(root)).replace(/</g, "\\u003c");
-  const scripts = ["icons.js", "parse.js", "issues.js", "views.js", "compare.js", "app.js"].map((f) => `<script>${asset(f)}</script>`).join("\n");
+  const rounds = findRounds(root);
+  const runs = Object.fromEntries(rounds.map((r) => [r.id, scanRun(roundDir(root, r.id))]));
+  const data = JSON.stringify({ rounds, runs }).replace(/</g, "\\u003c");
+  const scripts = SCRIPTS.map((f) => `<script>${asset(f)}</script>`).join("\n");
   const html = asset("index.html")
     .replace(/<link[^>]*style\.css[^>]*>/, () => `<style>${asset("style.css")}</style>`)
     .replace(/<script src=[\s\S]*<\/script>/, () => `<script>window.__COUNCIL__=${data}</script>\n${scripts}`);
@@ -46,16 +51,27 @@ if (demo) startDemo(root);
 
 // A page on another site must not read the answers by pointing its own domain here.
 const isLocalHost = (host = "") => /^(127\.0\.0\.1|localhost)(:\d+)?$/.test(host);
+const sendJson = (res, value) => {
+  res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+  res.end(JSON.stringify(value));
+};
 
 const server = createServer((req, res) => {
   if (!isLocalHost(req.headers.host)) {
     res.writeHead(403);
     return res.end();
   }
-  const path = req.url.split("?")[0];
+  const [path, query = ""] = req.url.split("?");
+  if (path === "/api/rounds") return sendJson(res, findRounds(root));
   if (path === "/api/run") {
-    res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
-    return res.end(JSON.stringify(scanRun(root)));
+    const rounds = findRounds(root);
+    const id = new URLSearchParams(query).get("round") || rounds.at(-1)?.id;
+    const dir = id && roundDir(root, id);
+    if (!dir) {
+      res.writeHead(404);
+      return res.end();
+    }
+    return sendJson(res, scanRun(dir));
   }
   if (path === "/" || ASSETS[path]) {
     const name = path === "/" ? "index.html" : path.slice(1);
