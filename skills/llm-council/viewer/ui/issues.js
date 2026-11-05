@@ -43,6 +43,7 @@ function summarize(group) {
     people: unique(voices.map((v) => v.seat.id)).length,
     natures: unique(voices.map((v) => v.seat.nature)),
     personas: unique(voices.map((v) => v.seat.persona)),
+    llms: unique(voices.map((v) => v.seat.engine)),
     offers: unique(voices.map((v) => v.offer)),
     types: unique(voices.map((v) => v.type)),
     believerBlocker: voices.some((v) => v.seat.nature === "believer" && v.p === "P1"),

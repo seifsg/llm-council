@@ -30,7 +30,7 @@ Write it to `frame.md`.
 | **Focus** | The personas a change affects x 6 natures | A changed offer or section. |
 | **Full** | Personas x 6 natures | A baseline, and before anything goes live. |
 
-A second model family doubles any of these. It catches engine quirks at twice the cost.
+Any number of LLMs can run the same seats, and each one adds the full seat count. They catch quirks of one model, and the viewer shows where they differ on the same person.
 
 Read [natures.md](references/natures.md) and use the wording exactly. For personas, read [personas.md](references/personas.md), draft them, have a fresh agent check them, and get the user's approval. Within one persona, shared facts stay fixed and each person has their own interview.
 
@@ -57,7 +57,7 @@ The template handles the known weaknesses of simulated judges. Keep these defenc
 
 **Files the runner writes**, so the viewer shows them live:
 
-- `run.json` before the first seat: `{"title", "decision", "engines": [...], "natures": [...], "people": {"<persona>--<nature>": "<first name>"}}`.
+- `run.json` before the first seat: `{"title", "decision", "engines": [...], "llms": {"<engine>": {"name": "<model shown to the user>"}}, "natures": [...], "people": {"<persona>--<nature>": "<first name>"}}`. Same engine folder names as below. An optional `"icon"` beside `name` takes a base64 image data URI; otherwise common LLMs get a simple mark.
 - `live/<engine>/<persona>--<nature>.txt`: reply text, appended as it streams.
 - On finish: `answers/<engine>/<persona>--<nature>.md`, and delete the live file. On failure: `answers/<engine>/<persona>--<nature>.error` with the reason.
 

@@ -34,17 +34,18 @@ function answer(seed, nature) {
 // Streams each seat a few lines at a time, then moves it to answers, as a real runner would.
 export function startDemo(root) {
   const personas = ["commuter", "parent", "courier", "shop-owner"];
-  const engines = ["claude", "codex"];
+  const engines = ["claude", "codex", "gemini", "grok"];
+  const llms = { claude: { name: "Claude Sonnet 5.5" }, codex: { name: "Codex gpt-6.1-sol" }, gemini: { name: "Gemini" }, grok: { name: "Grok" } };
   const seats = personas.flatMap((p) => NATURES.map((n) => `${p}--${n}`));
   const people = Object.fromEntries(seats.map((id, i) => [id, NAMES[i]]));
   writeFileSync(join(root, "run.json"), JSON.stringify({
-    title: "DEMO: bike repair subscription", decision: "Invented data, to try the viewer.", demo: true, natures: NATURES, engines, people,
+    title: "DEMO: bike repair subscription", decision: "Invented data, to try the viewer.", demo: true, natures: NATURES, engines, llms, people,
   }));
-  const jobs = engines.flatMap((e) => seats.map((id, i) => ({ e, id, seed: i + (e === "codex" ? 7 : 0) })));
+  const jobs = engines.flatMap((e, n) => seats.map((id, i) => ({ e, id, seed: i + n * 7 })));
   engines.forEach((e) => ["live", "answers"].forEach((d) => mkdirSync(join(root, d, e), { recursive: true })));
   const running = new Map();
   const timer = setInterval(() => {
-    while (running.size < 6 && jobs.length) {
+    while (running.size < 12 && jobs.length) {
       const job = jobs.splice(Math.floor(Math.random() * jobs.length), 1)[0];
       const text = answer(job.seed, job.id.split("--")[1]);
       running.set(job, text.match(/[^\n]*\n/g) || []);

@@ -62,6 +62,7 @@ export function scanRun(root) {
     demo: Boolean(run.demo),
     natures: run.natures || null,
     engines: [...engines],
+    llms: run.llms || {},
     seats,
     issues: readJson(join(root, "issues.json")),
   };

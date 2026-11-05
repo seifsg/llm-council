@@ -33,11 +33,14 @@ Node 18 or later, nothing to install. It runs on your machine only, and `--demo`
 |---|---|
 | Common issues | What are different people all tripping over? |
 | Live thoughts | What is each seat writing right now? |
+| LLM differences | Run one LLM or many: where do they disagree on the same person? |
 | Ideas and questions | What better framings, first steps and questions came up? |
 | The room | Who said what, by persona and nature? |
 | Scores | How did Neutral seats decide on each option? |
 
-Filter by nature, persona or engine, and search every answer. Click anyone to read their full answer. `--static <file.html>` writes one page you can share. It holds every answer, so keep it private unless your materials are public.
+![LLM differences view, with invented demo data](docs/viewer-llms.jpg)
+
+The header always shows which LLMs are in the run and how far each has got. Filter by nature, persona or LLM, and search every answer. Click anyone to read their full answer. `--static <file.html>` writes one page you can share. It holds every answer, so keep it private unless your materials are public.
 
 Common issues are grouped live by shared words, so similar wording can stay split until the final ranking merges it.
 

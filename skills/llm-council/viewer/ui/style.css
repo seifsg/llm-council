@@ -46,6 +46,31 @@ h1 { font-size: 20px; line-height: 1.25; text-wrap: balance; }
 @keyframes pulse { 50% { opacity: .25; transform: scale(.7); } }
 @media (prefers-reduced-motion: reduce) { .pulse, .caret { animation: none; } }
 
+.llm-strip { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin-top: 6px; font-size: 13px; }
+.llm-item { display: inline-flex; align-items: center; gap: 6px; }
+.llm-item small { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.llm { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap; vertical-align: middle; }
+.llm-mark { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 5px; background: var(--ink); color: var(--surface); font-size: 11px; line-height: 1; overflow: hidden; flex: none; }
+.llm-mark img { width: 100%; height: 100%; object-fit: cover; }
+
+.versus-title { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.versus { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; }
+.versus-col { display: flex; flex-direction: column; gap: 6px; text-align: left; background: var(--raised); border: 1px solid var(--line); border-top: 3px solid var(--ink); border-radius: 8px; padding: 8px 10px; }
+.versus-col ul { margin: 0; padding-left: 16px; font-size: 13px; }
+.versus-col strong { font-size: 12px; }
+.versus-col small { color: var(--ink-3); }
+.versus-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.versus-text { font-size: 13px; }
+.big-score { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.big-score small { font-size: 12px; font-weight: 400; color: var(--ink-3); }
+.tag.differs { color: var(--ink); border: 2px solid var(--ink); font-weight: 700; }
+.card.lone { font-size: 14px; }
+.switch { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.switch button { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; }
+.switch button[aria-pressed="true"] { border: 2px solid var(--ink); }
+.seat .llm { margin-top: 3px; }
+.voice small .llm { font-size: 11px; }
+
 .tabs { display: flex; gap: 4px; margin-top: 10px; overflow-x: auto; }
 .tabs button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 6px 10px; color: var(--ink-2); font-weight: 600; white-space: nowrap; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--accent); }

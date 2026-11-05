@@ -2,6 +2,7 @@
 const TABS = [
   ["issues", "Common issues", (seats, d) => issuesView(seats, d, state.open)],
   ["feed", "Live thoughts", feedView],
+  ["compare", "LLM differences", compareView],
   ["ideas", "Ideas and questions", ideasView],
   ["room", "The room", roomView],
   ["scores", "Scores", scoresView],
@@ -35,6 +36,7 @@ function drawHeader() {
   $("progress").innerHTML = `<span>${done} of ${data.seats.length} done</span>
     ${thinking ? `<span><span class="pulse"></span>${thinking} writing now</span>` : ""}${failed ? `<span>${failed} failed</span>` : ""}
     <span class="bar" role="img" aria-label="${done} done, ${thinking} writing"><i class="done" style="width:${(done / total) * 100}%"></i><i class="thinking" style="width:${(thinking / total) * 100}%"></i></span>`;
+  $("llms").innerHTML = llmStrip(data);
   $("tabs").innerHTML = TABS.map(([id, name]) => `<button type="button" role="tab" data-tab="${id}" aria-selected="${state.tab === id}">${name}</button>`).join("");
 }
 
@@ -46,10 +48,10 @@ function drawFilters() {
   const key = JSON.stringify([natures, personas, data.engines]);
   if (key === state.optionsKey) return;
   state.optionsKey = key;
-  const opts = (list, all, current) => `<option value="">${all}</option>` + list.map((v) => `<option value="${esc(v)}"${v === current ? " selected" : ""}>${label(v)}</option>`).join("");
+  const opts = (list, all, current, show = label) => `<option value="">${all}</option>` + list.map((v) => `<option value="${esc(v)}"${v === current ? " selected" : ""}>${esc(show(v))}</option>`).join("");
   $("filters").innerHTML = natures.map((n) => `<button class="chip" type="button" data-nature="${esc(n)}" aria-pressed="${!state.off.has(n)}" style="${hue(n)}"><span class="dot"></span>${icon(n)} ${label(n)}</button>`).join("") +
     `<select id="persona" aria-label="Persona">${opts(personas, "All personas", state.persona)}</select>` +
-    (data.engines.length > 1 ? `<select id="engine" aria-label="Engine">${opts(data.engines, "Both engines", state.engine)}</select>` : "") +
+    (data.engines.length > 1 ? `<select id="engine" aria-label="LLM">${opts(data.engines, "All LLMs", state.engine, (e) => llmInfo(e, data).name)}</select>` : "") +
     `<input id="search" type="search" placeholder="Search every answer" aria-label="Search every answer" value="${esc(state.q)}">`;
 }
 

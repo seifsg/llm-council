@@ -8,14 +8,14 @@ const hue = (nature) => `--c:var(--${KNOWN.includes(nature) ? nature : "other"})
 const icon = (nature) => ICONS[nature] || "🔹";
 const natureChip = (n) => `<span class="chip" style="${hue(n)}"><span class="dot"></span>${icon(n)} ${label(n)}</span>`;
 const who = (s) => `${s.name ? `${esc(s.name)} · ` : ""}${label(s.persona)}`;
-const engineTag = (s, data) => (data.engines.length > 1 ? `<span class="tag">${esc(s.engine)}</span>` : "");
+const engineTag = (s, data) => (data.engines.length > 1 ? llmBadge(s.engine, data) : "");
 const empty = (msg) => `<p class="empty">${esc(msg)}</p>`;
 
 function issueCard(issue, data, open) {
   const key = issue.title;
   const voices = issue.voices.map((v) => `
     <button class="voice" type="button" data-open="${esc(v.seat.key)}" style="${hue(v.seat.nature)}">
-      <small>${icon(v.seat.nature)} ${label(v.seat.nature)} · ${who(v.seat)} · ${esc(v.p)} · ${esc(v.offer)}${data.engines.length > 1 ? ` · ${esc(v.seat.engine)}` : ""}</small><br>
+      <small>${icon(v.seat.nature)} ${label(v.seat.nature)} · ${who(v.seat)} · ${esc(v.p)} · ${esc(v.offer)} ${engineTag(v.seat, data)}</small><br>
       ${esc(v.wrong)}${v.fix ? `<em>Would resolve it: ${esc(v.fix)}</em>` : ""}
     </button>`).join("");
   return `<article class="card">
@@ -26,6 +26,7 @@ function issueCard(issue, data, open) {
         <span class="meta">
           <span class="tag ${issue.topP === "P1" ? "p1" : ""}">${esc(issue.topP)}</span>
           ${issue.believerBlocker ? `<span class="tag star">🌟 Even a Believer balked</span>` : ""}
+          ${data.engines.length > 1 ? issue.llms.map((e) => llmBadge(e, data)).join("") : ""}
           ${issue.types.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}
           ${issue.offers.map((o) => `<span class="tag">${esc(o)}</span>`).join("")}
           ${orderNatures(issue.natures, data).map(natureChip).join("")}
@@ -72,7 +73,7 @@ function seatButton(s, data) {
   }
   return `<button class="seat ${s.status}" type="button" data-open="${esc(s.key)}" style="${hue(s.nature)}">
     <b>${s.status === "thinking" ? `<span class="pulse"></span>` : ""}${esc(s.name || s.id)}</b>
-    <small>${line}${data.engines.length > 1 ? ` · ${esc(s.engine)}` : ""}</small></button>`;
+    <small>${line}</small>${engineTag(s, data)}</button>`;
 }
 
 function roomView(seats, data) {
@@ -112,7 +113,7 @@ function ideasView(seats, data) {
       Object.entries(s.parsed.sections).filter(([name, body]) => !STANDARD.has(name) && !isNothing(body)).map(([name, body]) => ({ s, name, body })));
     if (!notes.length) return "";
     return `<h2 class="section-title">${icon(n)} ${label(n)}</h2>` + notes.map(({ s, name, body }) => `
-      <button class="voice" type="button" data-open="${esc(s.key)}" style="${hue(n)}"><small>${who(s)} · ${esc(name)}${data.engines.length > 1 ? ` · ${esc(s.engine)}` : ""}</small><pre>${pretty(body)}</pre></button>`).join("");
+      <button class="voice" type="button" data-open="${esc(s.key)}" style="${hue(n)}"><small>${who(s)} · ${esc(name)} ${engineTag(s, data)}</small><pre>${pretty(body)}</pre></button>`).join("");
   }).join("");
   return blocks || empty("Ideas and questions appear as seats finish their notes.");
 }
@@ -137,12 +138,14 @@ function scoresView(seats, data) {
 
 function drawerView(s, data) {
   const c = hue(s.nature);
+  const twins = data.seats.filter((t) => t.id === s.id);
   const sections = s.parsed && Object.keys(s.parsed.sections).length
     ? Object.entries(s.parsed.sections).map(([name, body]) => `<h3>${esc(name)}</h3><pre>${pretty(body)}</pre>`).join("")
     : `<pre>${pretty(s.text || "No text yet.")}</pre>`;
   return `<div class="drawer-head" style="${c}"><div><h2>${esc(s.name || s.id)}</h2>
-      <p class="sub">${icon(s.nature)} ${label(s.nature)} · ${label(s.persona)} · ${esc(s.engine)} · ${esc(s.status)}</p></div>
+      <p class="sub">${icon(s.nature)} ${label(s.nature)} · ${label(s.persona)} · ${esc(s.status)}</p></div>
       <button class="ghost" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="switch" role="group" aria-label="Same person on each LLM">${twins.map((t) => `<button type="button" data-open="${esc(t.key)}" aria-pressed="${t.key === s.key}">${llmBadge(t.engine, data)}</button>`).join("")}</div>
     <div class="full">${sections}</div>`;
 }
 
