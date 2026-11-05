@@ -1,15 +1,12 @@
 // Each view takes the filtered seats and returns HTML. All seat text is escaped: it is model output.
 // Quiet by default: indicators and tooltips first, every detail one hover or click away.
-const ICONS = { contrarian: "🗡️", believer: "🌟", neutral: "⚖️", confused: "❓", "first-principles": "🔬", executor: "🛠️" };
-const KNOWN = Object.keys(ICONS);
-
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const plain = (slug) => String(slug).replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase());
 const label = (slug) => esc(plain(slug));
 const hue = (nature) => `--c:var(--${KNOWN.includes(nature) ? nature : "other"})`;
-const icon = (nature) => ICONS[nature] || "🔹";
 const tip = (text) => `data-tip="${esc(text)}" aria-label="${esc(text)}"`;
-const info = (text) => `<span class="info" tabindex="0" ${tip(text)}>ⓘ</span>`;
+const info = (text) => `<span class="info" tabindex="0" ${tip(text)}>${UI.info}</span>`;
+const chevron = (isOpen) => `<span class="chev${isOpen ? " open" : ""}">${UI.chev}</span>`;
 const empty = (msg) => `<p class="empty">${esc(msg)}</p>`;
 const count = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const natureIcon = (n, tipText = plain(n), off = false) => `<span class="nat${off ? " off" : ""}" style="${hue(n)}" ${tip(tipText)}>${icon(n)}</span>`;
@@ -37,42 +34,49 @@ function breadth(issue, data) {
   return `<span class="natures">${natures}</span>${llms}`;
 }
 
-function voiceRow(v, data) {
-  const s = v.seat;
-  return `<button class="voice" type="button" data-open="${esc(s.key)}" style="${hue(s.nature)}">
-    <span class="voice-head">${natureIcon(s.nature)}<b>${esc(s.name || plain(s.persona))}</b>${engineMark(s, data)}<span class="quiet" ${tip(`${plain(s.nature)}, ${plain(s.persona)}, ${v.p}, ${v.type}, ${v.offer}`)}>${esc(v.p)}</span></span>
-    ${esc(v.wrong)}${v.fix ? `<em>→ ${esc(v.fix)}</em>` : ""}</button>`;
+// People saying the same words share one row, each still one click from their full answer.
+function voiceRows(voices, data) {
+  const rows = new Map();
+  for (const v of voices) {
+    const key = `${v.wrong}|${v.fix}`.toLowerCase();
+    rows.set(key, [...(rows.get(key) || []), v]);
+  }
+  return [...rows.values()].map((same) => {
+    const faces = same.map(({ seat: s, p, type, offer }) => `<button class="face" type="button" data-open="${esc(s.key)}" style="${hue(s.nature)}" ${tip(`${whoPlain(s)}, ${plain(s.nature)}${data.engines.length > 1 ? `, ${llmInfo(s.engine, data).name}` : ""}. ${p}, ${type}, ${offer}`)}>${natureIcon(s.nature, plain(s.nature))}<span>${esc(s.name || plain(s.persona))}</span>${data.engines.length > 1 ? `<span class="llm-mark" aria-hidden="true">${llmFace(s.engine, data)}</span>` : ""}</button>`).join("");
+    return `<div class="voice-row"><p>${esc(same[0].wrong)}</p>${same[0].fix ? `<em>→ ${esc(same[0].fix)}</em>` : ""}<div class="faces">${faces}</div></div>`;
+  }).join("");
 }
 
 function issueCard(issue, data, open) {
   const key = `issue:${issue.title}`;
   const isOpen = open.has(key);
   const meta = [...issue.types, ...issue.offers].join(" · ");
+  const everyone = new Set(data.seats.map((s) => s.id)).size || 1;
   return `<article class="card issue ${issue.topP === "P1" ? "is-p1" : ""}">
     <button class="issue-head" type="button" data-toggle="${esc(key)}" aria-expanded="${isOpen}">
-      <span class="tally" ${tip(count(issue.people, "person", "people"))}>${issue.people}</span>
+      <span class="tally" ${tip(`${issue.people} of ${count(everyone, "person", "people")} raised this`)}>${issue.people}<span class="reach"><i style="width:${(issue.people / everyone) * 100}%"></i></span></span>
       <span class="issue-main">
         <span class="issue-title">${esc(issue.title)}</span>
         <span class="meta"><span class="pill ${issue.topP === "P1" ? "p1" : ""}" ${tip({ P1: "P1: stops someone", P2: "P2: slows someone", P3: "P3: nice to have" }[issue.topP])}>${esc(issue.topP)}</span>
-          ${issue.believerBlocker ? `<span class="nat flag" ${tip("Even a Believer balked: the seat trying to say yes stopped here")}>🚩</span>` : ""}
+          ${issue.believerBlocker ? `<span class="nat flag" ${tip("Even a Believer balked: the seat trying to say yes stopped here")}>${UI.flag}</span>` : ""}
           ${breadth(issue, data)}<span class="quiet">${esc(meta)}</span></span>
       </span>
-      <span class="chev" aria-hidden="true">${isOpen ? "▾" : "▸"}</span>
+      ${chevron(isOpen)}
     </button>
-    ${isOpen ? `<div class="voices">${issue.voices.map((v) => voiceRow(v, data)).join("")}</div>` : ""}
+    ${isOpen ? `<div class="voices">${voiceRows(issue.voices, data)}</div>` : ""}
   </article>`;
 }
 
 function fold(key, title, body, open) {
   const isOpen = open.has(key);
-  return `<button class="fold" type="button" data-toggle="${esc(key)}" aria-expanded="${isOpen}"><span class="chev" aria-hidden="true">${isOpen ? "▾" : "▸"}</span>${title}</button>${isOpen ? body : ""}`;
+  return `<button class="fold" type="button" data-toggle="${esc(key)}" aria-expanded="${isOpen}">${chevron(isOpen)}${title}</button>${isOpen ? `<div class="fold-body">${body}</div>` : ""}`;
 }
 
 function heldUp(seats, data, open) {
   const quotes = seats.filter((s) => s.nature === "contrarian" && s.parsed && !isNothing(s.parsed.sections["Against type"]));
   if (!quotes.length) return "";
   const body = quotes.map((s) => `<button class="voice" type="button" data-open="${esc(s.key)}" style="${hue(s.nature)}"><span class="voice-head"><b>${esc(s.name || plain(s.persona))}</b>${engineMark(s, data)}</span>${esc(s.parsed.sections["Against type"])}</button>`).join("");
-  return fold("held", `🗡️ What held up, even for a Contrarian <span class="quiet">${quotes.length}</span>`, body, open);
+  return fold("held", `<span class="nat" style="${hue("contrarian")}">${icon("contrarian")}</span> What held up, even for a Contrarian <span class="quiet">${quotes.length}</span>`, body, open);
 }
 
 function ranked(list, seats, data) {
@@ -108,7 +112,7 @@ function seatCell(group, data) {
   const lead = group.find((s) => s.status === "done") || group.find((s) => s.text) || group[0];
   const scores = group.map((s) => s.parsed?.scores.overall).filter((n) => Number.isFinite(n));
   const writing = group.some((s) => s.status === "thinking");
-  const line = scores.length ? `${(scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(scores.length > 1 ? 1 : 0)}/10` : statusLine(lead);
+  const line = scores.length ? `${Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1))}/10${scores.length > 1 ? " avg" : ""}` : statusLine(lead);
   const marks = data.engines.length < 2 ? "" : `<span class="marks">${group.map((s) =>
     `<button class="mark-btn" type="button" data-open="${esc(s.key)}">${llmMark(s.engine, data, `${llmInfo(s.engine, data).name}: ${statusLine(s)}`, s.status === "done" ? "" : s.status === "thinking" ? "live" : "off")}</button>`).join("")}</span>`;
   return `<div class="seat ${group.every((s) => s.status === "queued") ? "queued" : ""}" style="${hue(lead.nature)}">
@@ -119,7 +123,7 @@ function roomView(seats, data) {
   if (!seats.length) return empty("No seats match these filters.");
   const natures = orderNatures([...new Set(seats.map((s) => s.nature))], data);
   const personas = [...new Set(seats.map((s) => s.persona))];
-  const heads = natures.map((n) => `<div class="room-head" style="${hue(n)}">${icon(n)} ${label(n)}</div>`).join("");
+  const heads = natures.map((n) => `<div class="room-head" style="${hue(n)}"><span class="nat bare">${icon(n)}</span>${label(n)}</div>`).join("");
   const rows = personas.map((p) => `<div class="room-row">${label(p)}</div>` + natures.map((n) => {
     const group = seats.filter((s) => s.persona === p && s.nature === n);
     return `<div>${group.length ? seatCell(group, data) : ""}</div>`;
@@ -156,7 +160,7 @@ function ideasView(seats, data, open) {
     if (!notes.length) return "";
     const body = notes.map(({ s, name, body: text }) => `
       <button class="voice" type="button" data-open="${esc(s.key)}" style="${hue(n)}"><span class="voice-head"><b>${esc(s.name || plain(s.persona))}</b>${engineMark(s, data)}<span class="quiet">${esc(name)}</span></span><pre>${pretty(text)}</pre></button>`).join("");
-    return fold(`ideas:${n}`, `${icon(n)} ${label(n)} <span class="quiet">${notes.length}</span>`, body, open);
+    return fold(`ideas:${n}`, `<span class="nat" style="${hue(n)}">${icon(n)}</span> ${label(n)} <span class="quiet">${notes.length}</span>`, body, open);
   }).join("");
   return blocks || empty("Ideas and questions appear as seats finish their notes.");
 }
@@ -197,8 +201,8 @@ function drawerView(s, data, open) {
     ? main + (rest.length ? fold(`more:${s.key}`, "Context, what they skipped, sources", rest.map(section).join(""), open) : "")
     : `<pre>${pretty(s.text || "No text yet.")}</pre>`;
   return `<div class="drawer-head" style="${hue(s.nature)}"><div><h2>${esc(s.name || s.id)}</h2>
-      <p class="sub">${icon(s.nature)} ${label(s.nature)} · ${label(s.persona)}${s.status === "done" ? "" : ` · ${esc(s.status)}`}</p></div>
-      <button class="ghost" type="button" data-close aria-label="Close">✕</button></div>
+      <p class="sub"><span class="nat bare" style="${hue(s.nature)}">${icon(s.nature)}</span> ${label(s.nature)} · ${label(s.persona)}${s.status === "done" ? "" : ` · ${esc(s.status)}`}</p></div>
+      <button class="ghost icon-btn" type="button" data-close aria-label="Close" ${tip("Close (Esc)")}>${UI.close}</button></div>
     ${twins.length > 1 ? `<div class="switch" role="group" aria-label="Same person on each LLM">${twins.map((t) => `<button type="button" data-open="${esc(t.key)}" aria-pressed="${t.key === s.key}">${llmBadge(t.engine, data)}</button>`).join("")}</div>` : ""}
     ${scoreRow}<div class="full">${sections}</div>`;
 }

@@ -10,6 +10,19 @@ const TABS = [
 const state = { tab: "issues", data: null, raw: "", open: new Set(), seat: null, off: new Set(), persona: "", engine: "", q: "", optionsKey: "", filtersOpen: false };
 const $ = (id) => document.getElementById(id);
 
+// Touches the page only when the markup changed, so polling never resets hover or animations.
+function setHtml(el, html) {
+  if (el.dataset.drawn !== String(hash(html))) {
+    el.dataset.drawn = hash(html);
+    el.innerHTML = html;
+  }
+}
+function hash(text) {
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0;
+  return h;
+}
+
 function ingest(data) {
   for (const s of data.seats) s.parsed = s.text ? parseAnswer(s.text) : null;
   state.data = data;
@@ -35,18 +48,18 @@ function drawHeader() {
   const total = data.seats.length || 1;
   const n = (st) => data.seats.filter((s) => s.status === st).length;
   const [done, thinking, failed] = [n("done"), n("thinking"), n("failed")];
-  $("progress").innerHTML = `<i class="done" style="width:${(done / total) * 100}%"></i><i class="thinking" style="width:${(thinking / total) * 100}%"></i>`;
+  setHtml($("progress"), `<i class="done" style="width:${(done / total) * 100}%"></i><i class="thinking" style="width:${(thinking / total) * 100}%"></i>`);
   $("progress").setAttribute("aria-label", `${done} of ${data.seats.length} done, ${thinking} writing`);
-  $("counts").innerHTML = `${thinking ? `<span class="pulse"></span>` : ""}${done}/${data.seats.length}${failed ? ` <span ${tip(`${failed} failed`)}>⚠ ${failed}</span>` : ""}`;
+  setHtml($("counts"), `${thinking ? `<span class="pulse"></span>` : ""}<b>${done}</b>/${data.seats.length}${failed ? ` <span class="sig" ${tip(`${failed} failed`)}>${UI.alert} ${failed}</span>` : ""}`);
   $("counts").dataset.tip = `${done} of ${data.seats.length} done, ${thinking} writing now, ${data.seats.length - done - thinking - failed} waiting, ${failed} failed`;
-  $("llms").innerHTML = llmStrip(data);
+  setHtml($("llms"), llmStrip(data));
   const issueCount = groupIssues(filtered()).length;
-  $("tabs").innerHTML = TABS.map(([id, name]) => {
+  setHtml($("tabs"), TABS.map(([id, name], i) => {
     const badge = id === "issues" && issueCount ? ` <span class="count">${issueCount}</span>` : id === "feed" && thinking ? ` <span class="pulse"></span>` : "";
-    return `<button type="button" role="tab" data-tab="${id}" aria-selected="${state.tab === id}">${name}${badge}</button>`;
-  }).join("");
+    return `<button type="button" role="tab" data-tab="${id}" aria-selected="${state.tab === id}" title="Press ${i + 1}">${name}${badge}</button>`;
+  }).join(""));
   const active = activeFilters();
-  $("filter-toggle").innerHTML = `Filter${active ? ` <span class="count-on">${active}</span>` : ""}`;
+  setHtml($("filter-toggle"), `${UI.filter}Filter${active ? ` <span class="count-on">${active}</span>` : ""}`);
   $("filter-toggle").setAttribute("aria-expanded", state.filtersOpen);
   $("filters").hidden = !state.filtersOpen;
 }
@@ -60,7 +73,7 @@ function drawFilters(force) {
   if (key === state.optionsKey && !force) return;
   state.optionsKey = key;
   const opts = (list, all, current, show = plain) => `<option value="">${all}</option>` + list.map((v) => `<option value="${esc(v)}"${v === current ? " selected" : ""}>${esc(show(v))}</option>`).join("");
-  $("filters").innerHTML = natures.map((n) => `<button class="chip" type="button" data-nature="${esc(n)}" aria-pressed="${!state.off.has(n)}" style="${hue(n)}">${icon(n)} ${label(n)}</button>`).join("") +
+  $("filters").innerHTML = natures.map((n) => `<button class="chip" type="button" data-nature="${esc(n)}" aria-pressed="${!state.off.has(n)}" style="${hue(n)}"><span class="nat bare">${icon(n)}</span>${label(n)}</button>`).join("") +
     `<select id="persona" aria-label="Persona">${opts(personas, "All personas", state.persona)}</select>` +
     (data.engines.length > 1 ? `<select id="engine" aria-label="LLM">${opts(data.engines, "All LLMs", state.engine, (e) => llmInfo(e, data).name)}</select>` : "") +
     `<input id="search" type="search" placeholder="Search every answer ( / )" aria-label="Search every answer" value="${esc(state.q)}">` +
@@ -68,18 +81,15 @@ function drawFilters(force) {
 }
 
 function drawView() {
-  $("view").innerHTML = TABS.find(([id]) => id === state.tab)[2](filtered(), state.data, state.open);
+  setHtml($("view"), TABS.find(([id]) => id === state.tab)[2](filtered(), state.data, state.open));
 }
 
 function drawDrawer() {
   const seat = state.seat && state.data.seats.find((s) => s.key === state.seat);
   const el = $("drawer");
   el.hidden = !seat;
-  if (seat) {
-    const top = el.scrollTop;
-    el.innerHTML = drawerView(seat, state.data, state.open);
-    el.scrollTop = top;
-  }
+  $("scrim").hidden = !seat;
+  if (seat) setHtml(el, drawerView(seat, state.data, state.open));
 }
 
 function drawAll() {
@@ -147,17 +157,33 @@ document.addEventListener("keydown", (e) => {
     state.seat = null;
     drawDrawer();
   }
-  if (e.key === "/" && !/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) {
+  if (/INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === "/") {
     e.preventDefault();
     state.filtersOpen = true;
     drawHeader();
     $("search")?.focus();
   }
+  const tab = TABS[Number(e.key) - 1];
+  if (tab) {
+    state.tab = tab[0];
+    drawHeader();
+    drawView();
+  }
 });
+
+// The chosen theme is a per-viewer convenience: the page still works if storage is blocked.
+const remember = {
+  get: () => { try { return localStorage.getItem("council-theme"); } catch { return null; } },
+  set: (v) => { try { localStorage.setItem("council-theme", v); } catch { /* not saved */ } },
+};
+if (remember.get()) document.documentElement.dataset.theme = remember.get();
+$("theme").innerHTML = UI.theme;
 $("theme").addEventListener("click", () => {
   const root = document.documentElement;
   const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   root.dataset.theme = dark ? "light" : "dark";
+  remember.set(root.dataset.theme);
 });
 
 async function poll() {

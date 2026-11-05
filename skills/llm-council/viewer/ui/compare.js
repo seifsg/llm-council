@@ -1,13 +1,13 @@
 // Shows which LLMs ran, and where they differ on the same person, prompt and materials.
 const LLM_LOOKS = [
-  [/claude|anthropic|opus|sonnet|haiku|fable/i, "✳", "Claude"],
-  [/codex|gpt|openai/i, "◎", "Codex"],
-  [/gemini|google/i, "✦", "Gemini"],
-  [/grok|xai/i, "✕", "Grok"],
-  [/llama/i, "🦙", "Llama"],
-  [/mistral/i, "▲", "Mistral"],
-  [/deepseek/i, "🐋", "DeepSeek"],
-  [/qwen/i, "◆", "Qwen"],
+  [/claude|anthropic|opus|sonnet|haiku|fable/i, "claude", "Claude"],
+  [/codex|gpt|openai/i, "codex", "Codex"],
+  [/gemini|google/i, "gemini", "Gemini"],
+  [/grok|xai/i, "grok", "Grok"],
+  [/llama/i, "llama", "Llama"],
+  [/mistral/i, "mistral", "Mistral"],
+  [/deepseek/i, "deepseek", "DeepSeek"],
+  [/qwen/i, "qwen", "Qwen"],
 ];
 
 function llmInfo(engine, data) {
@@ -19,7 +19,8 @@ function llmInfo(engine, data) {
 
 function llmFace(engine, data) {
   const { mark, icon } = llmInfo(engine, data);
-  return icon ? `<img src="${esc(icon)}" alt="">` : esc(mark);
+  if (icon) return `<img src="${esc(icon)}" alt="">`;
+  return LLM_SHAPES[mark] ? svg(LLM_SHAPES[mark]) : esc(mark);
 }
 
 // Icon alone, with the name and any extra detail in its tooltip.
@@ -82,7 +83,7 @@ function llmTotals(seats, data) {
       <td class="num">${own.length ? (findings / own.length).toFixed(1) : "·"}</td></tr>`;
   }).join("");
   return `<div class="table-wrap"><table><thead><tr><th scope="col">LLM</th><th scope="col">Avg score</th>
-    <th scope="col">Decisions ${info("Share of act, talk, think and no across every option. Darkest is act. Hover a bar for counts.")}</th><th scope="col">Findings each</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <th scope="col">Decisions ${info("Share of act, talk, think and no across every option, in that order. Hover a bar for counts.")}</th><th scope="col">Findings each</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function onlyOneLlm(seats, data, open) {
@@ -120,14 +121,14 @@ function compareCard({ g, diff }, data, open) {
   const key = `cmp:${g[0].id}`;
   const isOpen = open.has(key);
   const pills = [
-    diff.picks.size > 1 ? `<span class="sig" ${tip(`Different first picks: ${[...diff.picks].join(", ")}`)}>⑂</span>` : "",
+    diff.picks.size > 1 ? `<span class="sig" ${tip(`Different first picks: ${[...diff.picks].join(", ")}`)}>${UI.fork}</span>` : "",
     diff.differing.length ? `<span class="sig" ${tip(`Decisions differ on: ${diff.differing.join(", ")}`)}>≠ ${diff.differing.length}</span>` : "",
-    diff.onlyCount ? `<span class="sig" ${tip(count(diff.onlyCount, "finding") + " only one LLM raised")}>◇ ${diff.onlyCount}</span>` : "",
+    diff.onlyCount ? `<span class="sig" ${tip(count(diff.onlyCount, "finding") + " only one LLM raised")}>${UI.diamond} ${diff.onlyCount}</span>` : "",
   ].join("");
   return `<article class="card cmp" style="${hue(g[0].nature)}">
     <button class="cmp-head" type="button" data-toggle="${esc(key)}" aria-expanded="${isOpen}">
       ${natureIcon(g[0].nature)}<span class="cmp-who"><b>${esc(g[0].name || plain(g[0].persona))}</b> <span class="quiet">${label(g[0].persona)}</span></span>
-      ${scoreTrack(g, data)}<span class="sigs">${pills || `<span class="quiet">In step</span>`}</span><span class="chev" aria-hidden="true">${isOpen ? "▾" : "▸"}</span>
+      ${scoreTrack(g, data)}<span class="sigs">${pills || `<span class="quiet">In step</span>`}</span>${chevron(isOpen)}
     </button>
     ${isOpen ? `<div class="versus">${diff.rows.map((r) => versusColumn(r, diff, data)).join("")}</div>` : ""}</article>`;
 }
@@ -140,7 +141,7 @@ function compareView(seats, data, open) {
   const samePick = twins.filter((c) => c.diff.picks.size === 1).length;
   const agree = twins.length ? `<p class="summary"><b>${samePick} of ${twins.length}</b> people got the same first pick from every LLM that answered.</p>` : "";
   const list = cards.length
-    ? `<h2 class="section-title">Same person, biggest disagreement first ${info("Click a row to see each LLM side by side. ⑂ different first picks. ≠ decisions differ. ◇ findings only one LLM raised.")}</h2>` + cards.map((c) => compareCard(c, data, open)).join("")
+    ? `<h2 class="section-title">Same person, biggest disagreement first ${info("Click a row to see each LLM side by side. Signals on the right: different first picks, decisions that differ, findings only one LLM raised. Hover any for detail.")}</h2>` + cards.map((c) => compareCard(c, data, open)).join("")
     : empty("Comparisons appear once two LLMs have answered as the same person.");
   return llmTotals(seats, data) + agree + onlyOneLlm(seats, data, open) + list;
 }

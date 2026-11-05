@@ -10,7 +10,7 @@ import { scanRun } from "./scan.mjs";
 import { startDemo } from "./demo.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const ASSETS = { "/style.css": "text/css", "/parse.js": "text/javascript", "/issues.js": "text/javascript", "/views.js": "text/javascript", "/compare.js": "text/javascript", "/app.js": "text/javascript" };
+const ASSETS = { "/style.css": "text/css", "/icons.js": "text/javascript", "/parse.js": "text/javascript", "/issues.js": "text/javascript", "/views.js": "text/javascript", "/compare.js": "text/javascript", "/app.js": "text/javascript" };
 const asset = (name) => readFileSync(join(HERE, "ui", name), "utf8");
 
 const args = process.argv.slice(2);
@@ -29,7 +29,7 @@ if (!root || !existsSync(root)) {
 // Inlines every asset and the data, so the file opens with no server.
 function writeStatic(out) {
   const data = JSON.stringify(scanRun(root)).replace(/</g, "\\u003c");
-  const scripts = ["parse.js", "issues.js", "views.js", "compare.js", "app.js"].map((f) => `<script>${asset(f)}</script>`).join("\n");
+  const scripts = ["icons.js", "parse.js", "issues.js", "views.js", "compare.js", "app.js"].map((f) => `<script>${asset(f)}</script>`).join("\n");
   const html = asset("index.html")
     .replace(/<link[^>]*style\.css[^>]*>/, () => `<style>${asset("style.css")}</style>`)
     .replace(/<script src=[\s\S]*<\/script>/, () => `<script>window.__COUNCIL__=${data}</script>\n${scripts}`);
