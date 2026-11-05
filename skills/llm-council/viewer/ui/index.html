@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Council Viewer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div class="title-block">
+      <h1 id="title">Council</h1>
+      <p id="decision"></p>
+    </div>
+    <button class="ghost" id="theme" type="button" aria-label="Switch light or dark">◐</button>
+  </div>
+  <div id="progress"></div>
+  <nav class="tabs" id="tabs" aria-label="Views"></nav>
+  <div class="filters" id="filters"></div>
+</header>
+<main id="view" tabindex="-1"></main>
+<aside class="drawer" id="drawer" aria-label="Full answer" hidden></aside>
+<footer class="note">Simulated viewpoints. They find problems. They do not prove anyone would pay.</footer>
+<script src="parse.js"></script>
+<script src="issues.js"></script>
+<script src="views.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
