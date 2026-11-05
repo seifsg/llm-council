@@ -100,7 +100,7 @@ Read every answer. Then:
 7. **Pull the against-type signals**, the strongest output of the run: a Believer's blocker, and what held up for a Contrarian.
 8. **Report disagreement.** Never average it away.
 
-Within a tier, P1 before P2 before P3, then the most seats. Write `issues.json`, the viewer's ranked list of problems: `[{"title","tier","real","type","target","do","money","seats":["<persona>--<nature>"]}]`.
+Within a tier, P1 before P2 before P3, then the most seats. Write `issues.json`, which the viewer shows above its live groups: `[{"title","tier","real","type","target","do","money","seats":["<persona>--<nature>"]}]`.
 
 ## 6. Write the report
 
@@ -138,4 +138,4 @@ Each run of a draft is a round in its own folder, and old rounds are never overw
 
 ## Comparing drafts
 
-Compare only the same person on the same engine, with the same prompt, facts, interview and scale. If any changed, compare findings instead and say why. The viewer applies this from the fingerprints in `run.json`, and marks options that exist in only one round rather than comparing them. Never present a score rise as proof of demand: it may only mean the seats saw better wording.
+Compare only the same person on the same engine, with the same prompt, facts, interview and scale. If any changed, compare findings instead and say why. The viewer's Rounds tab applies this from the fingerprints in `run.json`, and marks options that exist in only one round rather than comparing them. Never present a score rise as proof of demand: it may only mean the seats saw better wording.
