@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Council Viewer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%232a78d6'/%3E%3Ccircle cx='8' cy='8' r='3' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div class="title-block">
+      <h1 id="title">Council</h1>
+      <p id="decision" tabindex="0"></p>
+    </div>
+    <div class="status">
+      <span id="counts" class="counts" tabindex="0"></span>
+      <span id="llms" class="llm-strip"></span>
+      <button class="ghost icon-btn" id="theme" type="button" aria-label="Switch light or dark" data-tip="Switch light or dark">◐</button>
+    </div>
+  </div>
+  <div class="nav-row">
+    <nav class="tabs" id="tabs" aria-label="Views"></nav>
+    <button class="ghost" id="filter-toggle" type="button" aria-controls="filters">Filter</button>
+  </div>
+  <div class="filters" id="filters" hidden></div>
+  <div class="bar" id="progress" role="img"></div>
+</header>
+<p class="offline" id="offline" hidden>Lost the connection to the viewer. Retrying.</p>
+<main id="view" tabindex="-1"></main>
+<div class="scrim" id="scrim" data-close hidden></div>
+<aside class="drawer" id="drawer" aria-label="Full answer" hidden></aside>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<footer class="note">Simulated people. They find problems. They do not prove anyone would pay.</footer>
+<script src="icons.js"></script>
+<script src="parse.js"></script>
+<script src="issues.js"></script>
+<script src="views.js"></script>
+<script src="compare.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

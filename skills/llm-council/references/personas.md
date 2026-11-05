@@ -1,44 +1,44 @@
 # Writing personas
 
-Personas are for grids. Vague ones answer in a way that fits their label but not a life, so every field holds a specific: a number, a tool, a name, an event.
+Personas are for grids. Label-level personas answer like the label. People grounded in their own words answer like people, so each seat gets fixed shared facts plus its own first-person interview.
 
 ## How many
 
-Start from who could really make or block this decision. 6 to 12 is plenty. Cover different budgets, skill levels and buying paths, and include the people the user would rather not hear from. Drop anyone who could never be in the audience.
+Start from who could really make or block this decision. 6 to 12 is plenty. Cover different budgets, skill levels and buying paths, and include the people the user would rather not hear from. Drop anyone who could never be in the audience. Calibrate against real people the user knows, without using their names.
 
-## Template
+## Shared facts
+
+The same for all six natures of a persona, so answers compare. Under 100 words, specific numbers and tools:
 
 ```text
-slug: <short-kebab-case>
-You: <one line: age, role, size of company or household>
-Stakes: <what you can spend in money and time, and the limit where it starts to hurt>
-Today: <what you actually use or do now, and what it costs you>
-Alternatives: <2 or 3 named things you would really choose instead, including doing nothing>
-Fear: <the one outcome that would make you regret this>
-Who decides: <you alone, or who else must agree, and what they will ask>
-How you really decide: <what you read, who you ask, how long it takes, what you skip>
-Last similar decision: <one real-feeling past choice, its price and how it turned out>
+<role and situation> <what they can spend, and where it starts to hurt> <what they use today and what it costs> <who else must agree> Other options you know of: <2 or 3 real alternatives, including doing nothing>.
 ```
 
-The last field anchors the persona in behaviour instead of opinion. Keep each persona under 120 words.
+## Interview
+
+One per seat, under 180 words, in that person's own voice. Age, business and last purchase are individual. Must hold:
+
+- A distinct voice. Reading it aloud, you could tell it from the other 71.
+- A recent moment that stings, as a story.
+- A real money memory, with an amount and how it turned out.
+- A contradiction: somewhere this person breaks their own pattern.
+- How they really say no: go quiet, send paper, ask a spouse, hang up. Believers too.
+
+Show the nature through events. Never name it, never restate it.
 
 ## Example
 
 ```text
-slug: clinic-manager
-You: office manager, 52, at a family clinic with 3 doctors and 9 staff.
-Stakes: $150 a month without asking. A tool that takes a week to learn dies.
-Today: paper sign-in sheets, a shift spreadsheet, phone reminders. About 6 staff hours a week.
-Alternatives: keep the spreadsheet, the practice-software add-on, a temp in busy months.
-Fear: patient details leak, or the tool fails on a full Monday morning.
-Who decides: the senior doctor signs over $150 and asks who else in town uses it.
-How you really decide: asks two other clinics, watches a demo, skips anything with jargon on page one.
-Last similar decision: $90 a month for online booking. Staff quit using it after 2 months; cancelled after 6.
+My dad cleaned pools. I built that into a company with crews in three towns, and customers book and pay on our app. I can tell you the margin on a Tuesday route to the cent, but ask me what a server is and I'm in trouble. My developer sends me messages like "pushed the hotfix, will roll back if staging complains." I reply with a thumbs up, then look it up in the truck. I signed something last year for a security certificate, $400, and I still couldn't tell you what it does. When I was 38 a guy talked fast at me for an hour and I bought a phone system we never plugged in. I don't like asking twice, people look at you a certain way. When I don't understand something I don't say no. I just don't do anything for a while, and then it goes away.
 ```
 
 ## Check before asking for approval
 
-- Could you name a real person like this? If not, rewrite it.
-- Do two personas decide the same way for the same reason? Merge them.
-- Does any persona already love or hate the subject by construction? Remove that: the lens sets temperament, the persona sets facts.
-- Does anything in the persona come from material the audience could not know? Remove it.
+Have a fresh agent read them all, then fix:
+
+- Any mention of the subject: interviews must not know about it, not even a phrase from the materials.
+- Facts that break the shared facts, or implausible ages and numbers.
+- Repeated phrases, endings and memories. Count them: one writer repeats itself. Put ages inside stories, not in a closing "I'm 47."
+- Pairs whose voices could swap.
+- Stereotypes tied to a name, age, gender or nationality, and names clustering by nature.
+- Real names or private figures: prompts go to outside models.
