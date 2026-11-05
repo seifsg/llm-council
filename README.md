@@ -4,7 +4,7 @@ A Claude skill that puts any idea, offer, plan, draft, price or decision in fron
 
 Ask one model and you get one careful, agreeable voice. A council gets real spread: each seat is a separate process with its own life and temperament, reading only the real materials and never another seat's answer.
 
-![Common issues view, with invented demo data](docs/viewer.jpg)
+![The viewer's first screen, with invented demo data](docs/viewer.jpg)
 
 ## The six natures
 
@@ -29,27 +29,27 @@ node skills/llm-council/viewer/serve.mjs --demo
 
 Node 18 or later, nothing to install. It runs on your machine only, and `--demo` streams invented answers so you can try it.
 
-| View | What it answers |
+Point it at a folder of rounds and the first screen answers one question: **is this improving?** The latest round against the one before it, as a verdict in words (better, worse, no real change), changes in overall score, clarity and belief, decisions moved toward act or talk, and one ranked list of problems fixed, new and still open. Click a problem to read the people who raised it.
+
+Only the same person on the same LLM, with the same prompt and persona, is compared. LLMs in only one round are left out and named. If the recorded fingerprints differ, it says findings only. Better or worse needs a move of at least half a point that the spread of the answers cannot explain.
+
+Everything else sits under **Details**:
+
+| Section | What it answers |
 |---|---|
-| Common issues | What are different people all tripping over? |
 | Live | What is each seat writing right now? |
-| LLMs | Run one LLM or many: where do they disagree on the same person? |
+| Room | Who is in the council, by persona and nature? |
 | Ideas | What better framings, first steps and questions came up? |
-| Room | Who said what, by persona and nature? |
 | Scores | How did Neutral seats decide on each option? |
-| Rounds | What changed from one round to another? |
+| LLMs | Where do LLMs disagree on the same person? |
+| All findings | Everything raised, grouped by wording |
+| Rounds | Every round, and any two compared in full |
 
-Point the viewer at a folder holding many rounds to list them and compare any two: score changes for the same person on the same LLM, decisions per option, first picks, issues no longer raised, new or still open, and what changed in the offer. Scores only compare when the round's recorded prompt and persona fingerprints match. Otherwise it shows findings only.
+Keys: `/` search, `d` details, `j` and `k` move through the list, `Esc` goes back. Pointing at one run folder still works.
 
-![Rounds view, with invented demo data](docs/viewer-rounds.jpg)
+`--static <file.html>` writes one page you can share. It holds every answer, so keep it private unless your materials are public.
 
-It stays quiet by default: indicators and icons up front, with names and numbers in tooltips and full answers one click away. Press `/` to search.
-
-![LLMs view, with invented demo data](docs/viewer-llms.jpg)
-
-The header always shows which LLMs are in the run and how far each has got. Filter by nature, persona or LLM, and search every answer. Click anyone to read their full answer. `--static <file.html>` writes one page you can share. It holds every answer, so keep it private unless your materials are public.
-
-Common issues are grouped live by shared words, so similar wording can stay split until the final ranking merges it.
+Before a round is ranked, problems are grouped by shared words, so similar wording can stay split until the final ranking merges it. Fixed means seats stopped raising something, matched by wording, so check before trusting it.
 
 ## Install
 

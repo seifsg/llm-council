@@ -12,7 +12,7 @@ import { findRounds, roundDir } from "./rounds.mjs";
 import { startDemo } from "./demo.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const SCRIPTS = ["icons.js", "parse.js", "issues.js", "views.js", "compare.js", "rounds.js", "app.js"];
+const SCRIPTS = ["parse.js", "issues.js", "focus.js", "compute.js", "details.js", "rounds.js", "app.js"];
 const ASSETS = { "/style.css": "text/css", ...Object.fromEntries(SCRIPTS.map((f) => [`/${f}`, "text/javascript"])) };
 const asset = (name) => readFileSync(join(HERE, "ui", name), "utf8");
 
