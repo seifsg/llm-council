@@ -15,14 +15,14 @@ const GROUPS = {
   fixed: ["good", "▲ Fixed", "People stopped raising these."],
   fresh: ["bad", "▼ New", "Raised this round, not last round."],
   open: ["flat", "● Still open", "Raised in both rounds."],
-  top: ["flat", "Top problems", "The biggest problems in this round."],
+  top: ["flat", "Top problems", "The biggest problems in this round, most people first."],
 };
 
 function headlineSentence(c) {
   const o = c.metrics.overall;
   const lean = c.metrics.lean;
-  const topNew = c.problems.fresh.filter((p) => p.tier === "A" || p.topP === "P1").length;
-  const topFixed = c.problems.fixed.filter((p) => p.tier === "A" || p.topP === "P1").length;
+  const topNew = c.ranked ? c.problems.fresh.filter((p) => p.tier === "A" || p.topP === "P1").length : 0;
+  const topFixed = c.ranked ? c.problems.fixed.filter((p) => p.tier === "A" || p.topP === "P1").length : 0;
   const soFar = c.B.seats.some((s) => s.status === "thinking") ? " so far" : "";
   const buts = [
     c.verdict === "better" && topNew > topFixed && `${count(topNew, "new top problem")} arrived, more than were fixed.`,
@@ -51,8 +51,9 @@ function tilesFor(c) {
     m.belief ? tile("Belief", signed(m.belief.average), toneOf(m.belief.average), "Do they think it would work") : "",
     tile("Closer to buying", `${m.lean.toward} up, ${m.lean.away} down`, toneOf(m.lean.toward - m.lean.away), "Decisions moved toward act or talk"),
   ].join("");
-  const problems = [tile("Fixed", fixed.length, fixed.length ? "good" : "flat", "Problems gone"), tile("New", fresh.length, fresh.length ? "bad" : "flat", "Problems added"), tile("Still open", open.length, "flat", "Problems left")].join("");
-  return `${scores ? `<div class="tiles">${scores}</div>` : ""}<div class="tiles">${problems}</div>`;
+  // Matching a ranked list against raw wording would invent fixes, so these wait for both rankings.
+  const problems = !c.ranked ? "" : [tile("Fixed", fixed.length, fixed.length ? "good" : "flat", "Problems gone"), tile("New", fresh.length, fresh.length ? "bad" : "flat", "Problems added"), tile("Still open", open.length, "flat", "Problems left")].join("");
+  return `${scores ? `<div class="tiles">${scores}</div>` : ""}${problems ? `<div class="tiles">${problems}</div>` : ""}`;
 }
 
 function notesFor(c, nameA, nameB) {
@@ -63,7 +64,7 @@ function notesFor(c, nameA, nameB) {
   if (c.blocked.length && !c.check.reason) lines.push(`${count(c.blocked.length, "answer")} left out: that person's facts or interview changed.`);
   if (c.offersOneSided.length) lines.push(`Not compared, in one round only: ${c.offersOneSided.map((o) => o.name).join(", ")}.`);
   if (c.metrics.overall && c.metrics.overall.n < SMALL_SAMPLE && !["few", "findings"].includes(c.verdict)) lines.push(`Small sample: ${count(c.metrics.overall.n, "matched answer")}. Treat this as a hint.`);
-  if (!c.ranked) lines.push("Not ranked yet: problems are grouped by wording, so this is rough.");
+  if (!c.ranked) lines.push("Fixed, new and still open appear once both rounds are ranked. Until then, these problems are grouped by wording, so this is rough.");
   return lines.length ? `<ul class="imp-notes">${lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>` : "";
 }
 
@@ -138,5 +139,7 @@ function improvingView(state) {
   const [sign, word, tone] = HEADLINES[c.verdict];
   return `${live(B, nameB)}${live(A, nameA)}<section class="hero ${tone}"><p class="eyebrow">Am I improving? ${esc(nameB)} against ${esc(nameA)}</p><h1><span aria-hidden="true">${sign}</span> ${esc(word)}</h1><p class="hero-text">${esc(headlineSentence(c))}</p></section>
     ${tilesFor(c)}${notesFor(c, nameA, nameB)}
-    ${problemGroup("fixed", c.problems.fixed, A, A, state.open)}${problemGroup("fresh", c.problems.fresh, B, B, state.open)}${problemGroup("open", c.problems.open, B, B, state.open)}${foot}`;
+    ${c.ranked
+    ? `${problemGroup("fixed", c.problems.fixed, A, A, state.open)}${problemGroup("fresh", c.problems.fresh, B, B, state.open)}${problemGroup("open", c.problems.open, B, B, state.open)}`
+    : problemGroup("top", rankProblems(problemsOf(B, c.inBoth).list), B, B, state.open)}${foot}`;
 }
