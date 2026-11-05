@@ -72,18 +72,24 @@ function problemsOf(R, engines) {
   return { list: groups, ranked: false };
 }
 
-// Pairs each problem with its closest match by wording. Each is used once.
-function standing(listA, listB) {
-  const open = [], fresh = [], unused = new Set(listA);
-  for (const b of listB) {
-    let best = null, bestScore = 0.25;
-    for (const a of unused) {
-      const score = similarity(tokens(a.title), tokens(b.title));
-      if (score >= bestScore) { best = a; bestScore = score; }
-    }
-    if (best) { unused.delete(best); open.push({ ...b, was: best }); } else fresh.push(b);
-  }
-  return { fixed: rankProblems([...unused]), fresh: rankProblems(fresh), open: rankProblems(open) };
+// Problems link across rounds only by the ranker's key and status. Word similarity cannot carry a claim like fixed.
+const STATUSES = new Set(["fixed", "reduced", "open", "worse", "new"]);
+const TOP_COUNT = 20;
+
+function linkProblems(A, B) {
+  const [a, b] = [A.issues, B.issues];
+  if (!Array.isArray(a) || !a.length || !Array.isArray(b) || !b.length) return { linked: false, why: "unranked" };
+  if (![...a, ...b].every((i) => i.key)) return { linked: false, why: "no keys" };
+  const keysA = new Set(a.map((i) => i.key));
+  const keysB = new Set(b.map((i) => i.key));
+  const onlyKeys = { both: b.filter((i) => keysA.has(i.key)), onlyA: a.filter((i) => !keysB.has(i.key)), onlyB: b.filter((i) => !keysA.has(i.key)) };
+  const adjacent = Number.isInteger(A.meta.round) && A.meta.round + 1 === B.meta.round;
+  const consistent = b.every((i) => STATUSES.has(i.status) && (i.status === "new") !== keysA.has(i.key));
+  if (!adjacent || !consistent) return { linked: false, why: adjacent ? "bad status" : "not adjacent", ...onlyKeys };
+  const of = (status) => rankProblems(b.filter((i) => i.status === status));
+  const statusOf = new Map(b.map((i) => [i.key, i.status]));
+  const top = a.slice(0, TOP_COUNT).map((i) => statusOf.get(i.key));
+  return { linked: true, fixed: of("fixed"), reduced: of("reduced"), worse: of("worse"), fresh: of("new"), open: of("open"), top: { size: top.length, fixed: top.filter((s) => s === "fixed").length, reduced: top.filter((s) => s === "reduced").length, open: top.filter((s) => s === "open").length, worse: top.filter((s) => s === "worse").length } };
 }
 
 function compareRounds(A, B, keep = () => true) {
@@ -95,14 +101,12 @@ function compareRounds(A, B, keep = () => true) {
   ];
   const { check, same, blocked } = pairUp(A, B, keep);
   const metrics = { overall: change(same, "overall"), clarity: change(same, "clarity"), belief: change(same, "belief"), lean: leanings(same, A, B) };
-  const [pa, pb] = [problemsOf(A, inBoth), problemsOf(B, inBoth)];
   const hasKey = (R, key) => R.meta.offers.some((o) => o.key === key);
   const offersOneSided = [...A.meta.offers.filter((o) => !hasKey(B, o.key)), ...B.meta.offers.filter((o) => !hasKey(A, o.key))];
   return {
     A, B, inBoth, leftOut, check, same, blocked, metrics, offersOneSided,
     verdict: check.reason ? "findings" : verdictFrom(metrics.overall),
-    problems: standing(pa.list, pb.list),
-    ranked: pa.ranked && pb.ranked,
+    link: linkProblems(A, B),
   };
 }
 

@@ -31,7 +31,7 @@ Node 18 or later, nothing to install. It runs on your machine only, and `--demo`
 
 | View | What it answers |
 |---|---|
-| Am I improving? | Latest round against the one before: a verdict in plain words, what moved, and problems fixed, new and still open |
+| Am I improving? | Latest round against the one before: a verdict in plain words, what moved, and problems fixed, reduced, worse, new and still open, as linked by the ranker |
 | Common issues | What are different people all tripping over? |
 | Live | What is each seat writing right now? |
 | LLMs | Run one LLM or many: where do they disagree on the same person? |

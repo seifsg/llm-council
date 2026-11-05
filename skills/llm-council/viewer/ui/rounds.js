@@ -2,7 +2,6 @@
 const roundName = (r) => (r.round !== null ? `Round ${r.round}` : r.kind === "pilot" ? "Pilot" : r.title);
 const roundLabel = (r) => `${roundName(r)} · ${r.draft} · ${r.size}`;
 const shortDate = (d) => (d ? String(d).slice(0, 10) : "·");
-const STANDING = { open: "Still open", fixed: "No longer raised", fresh: "New" };
 
 function roundsTable(rounds, current) {
   const rows = rounds.map((r) => `<tr class="${r.id === current ? "is-current" : ""}">
@@ -54,32 +53,22 @@ function pickRows(same, nameA, nameB) {
   return `<h2 class="section-title">First picks, same matched answers</h2><div class="table-wrap"><table><thead><tr><th scope="col">Pick</th><th scope="col" class="num">${esc(nameA)}</th><th scope="col" class="num">${esc(nameB)}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-// Pairs each issue with its closest match by wording. Each issue is used once.
-function issueStanding(listA, listB) {
-  const open = [], fresh = [], unused = new Set(listA);
-  for (const b of listB) {
-    let best = null, bestScore = 0.25;
-    for (const a of unused) {
-      const score = similarity(tokens(a.title), tokens(b.title));
-      if (score >= bestScore) { best = a; bestScore = score; }
-    }
-    if (best) { unused.delete(best); open.push({ a: best, b }); } else fresh.push(b);
-  }
-  return { open, fresh, fixed: [...unused] };
-}
-
-function issueList(title, items, line, open) {
+function issueList(title, items, open) {
   if (!items.length) return "";
-  return fold(`std:${title}`, `${esc(title)} <span class="quiet">${items.length}</span>`, items.map(line).join(""), open);
+  const row = (i) => `<div class="lone"><span class="pill">${esc(i.tier ? `Tier ${i.tier}` : "·")}</span>${esc(i.title)} <span class="quiet">${esc([i.type, i.offer || i.target, i.judged === false && "not re-checked"].filter(Boolean).join(" · "))}</span></div>`;
+  return fold(`std:${title}`, `${esc(title)} <span class="quiet">${items.length}</span>`, items.map(row).join(""), open);
 }
 
+// Only the ranker's keys and statuses count. Rounds that are not linked say so, and claim nothing.
 function issuesCompared(A, B, nameA, nameB, open) {
-  const [a, b] = [A.issues, B.issues].map((l) => (Array.isArray(l) ? l : null));
-  if (!a || !b) return `<p class="summary">Issue changes appear once both rounds have a ranked list: ${esc(!a ? nameA : nameB)} has none yet.</p>`;
-  const { open: still, fresh, fixed } = issueStanding(a, b);
-  const row = (i) => `<div class="lone"><span class="pill">${esc(i.tier ? `Tier ${i.tier}` : "·")}</span>${esc(i.title)} <span class="quiet">${esc([i.type, i.offer || i.target].filter(Boolean).join(" · "))}</span></div>`;
-  return `<h2 class="section-title">Ranked issues <span class="quiet">${still.length} still open, ${fixed.length} no longer raised, ${fresh.length} new</span> ${info("Matched by wording, so check before trusting. No longer raised does not prove a fix: it means seats stopped saying it.")}</h2>` +
-    issueList(STANDING.fixed, fixed, row, open) + issueList(STANDING.fresh, fresh, row, open) + issueList(STANDING.open, still, ({ b: i }) => row(i), open);
+  const link = linkProblems(A, B);
+  if (link.linked) {
+    return `<h2 class="section-title">Ranked problems</h2>${issueList("Fixed", link.fixed, open)}${issueList("Reduced", link.reduced, open)}${issueList("Worse", link.worse, open)}${issueList("New", link.fresh, open)}${issueList("Still open", link.open, open)}`;
+  }
+  if (link.both) {
+    return `<h2 class="section-title">Ranked problems, linked by key <span class="quiet">${link.both.length} in both</span> ${info("These rounds are not next to each other, so the ranker's fixed, reduced and worse do not apply between them.")}</h2>${issueList(`Only in ${nameA}`, link.onlyA, open)}${issueList(`Only in ${nameB}`, link.onlyB, open)}${issueList("In both", link.both, open)}`;
+  }
+  return `<p class="summary">Problems are not linked between these rounds, so fixed and new are not shown.</p>`;
 }
 
 function offerChanges(A, B, nameA, nameB, open) {

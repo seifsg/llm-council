@@ -53,10 +53,10 @@ function writeRound(root, r) {
   writeFileSync(join(dir, "offer.md"), r.offer);
   writeFileSync(join(dir, "offers.txt"), r.offers);
   writeFileSync(join(dir, "why.md"), `Decision: invented, for trying round ${r.round}.\n`);
-  const issue = (title, type, offer, seats) => ({ title, tier: "A", real: "untested", type, offer, do: "Invented demo action", money: "Invented demo payoff", seats });
+  const issue = (key, status, title, type, offer, seats) => ({ key, status, title, tier: "A", real: "untested", type, offer, do: "Invented demo action", money: "Invented demo payoff", seats });
   writeFileSync(join(dir, "issues.json"), JSON.stringify(r.round === 1
-    ? [issue("No coverage map, so I cannot tell if the van reaches my street", "add", "all", SEATS.slice(0, 9)), issue("Nobody says if parts are included in the price", "fix", "plus", SEATS.slice(3, 12)), issue("Same-day promise has no hours attached", "improve", "plus", SEATS.slice(5, 9))]
-    : [issue("Nobody says if parts are included in the price", "fix", "plus", SEATS.slice(2, 10)), issue("Care does not say what a tune-up includes", "add", "care", SEATS.slice(8, 15))]));
+    ? [issue("coverage-map", "new", "No coverage map, so I cannot tell if the van reaches my street", "add", "all", SEATS.slice(0, 9)), issue("parts-included", "new", "Nobody says if parts are included in the price", "fix", "plus", SEATS.slice(3, 12)), issue("same-day-hours", "new", "Same-day promise has no hours attached", "improve", "plus", SEATS.slice(5, 9))]
+    : [issue("coverage-map", "fixed", "No coverage map, so I cannot tell if the van reaches my street", "add", "all", SEATS.slice(0, 9)), issue("same-day-hours", "reduced", "Same-day hours are shown but not for weekends", "improve", "plus", SEATS.slice(5, 7)), issue("parts-included", "open", "Parts are still not stated in the price", "fix", "plus", SEATS.slice(2, 10)), issue("care-tune-up", "new", "Care does not say what a tune-up includes", "add", "care", SEATS.slice(8, 15))]));
   return dir;
 }
 

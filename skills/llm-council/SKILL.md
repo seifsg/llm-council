@@ -100,7 +100,15 @@ Read every answer. Then:
 7. **Pull the against-type signals**, the strongest output of the run: a Believer's blocker, and what held up for a Contrarian.
 8. **Report disagreement.** Never average it away.
 
-Within a tier, P1 before P2 before P3, then the most seats. Write `issues.json`, which the viewer shows above its live groups: `[{"title","tier","real","type","target","do","money","seats":["<persona>--<nature>"]}]`.
+Within a tier, P1 before P2 before P3, then the most seats. Write `issues.json`, which the viewer shows above its live groups: `[{"key","status","title","tier","real","type","target","do","money","seats":["<persona>--<nature>"]}]`.
+
+**Link problems across rounds.** Rewording is normal, so problems link only by these two fields. Read the previous round's `issues.json` first.
+
+- `key`: a short slug. The same problem keeps the same key in every round, however it is reworded.
+- `status`, relative to the previous round: `fixed`, `reduced`, `open`, `worse` or `new`. The first round uses `new`.
+- Carry every previous problem forward. A `fixed` one stays in the list with its old title and seats. One you cannot judge stays as `open` with `"judged": false`, never `fixed`.
+
+Without keys and statuses, the viewer shows scores and says the problems are not linked. It never infers fixed or new from wording.
 
 ## 6. Write the report
 
