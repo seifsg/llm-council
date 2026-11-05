@@ -126,11 +126,11 @@ function improvingView(state) {
     const writing = R.seats.filter((s) => s.status === "thinking").length;
     return writing ? `<p class="imp-live"><span class="pulse"></span>${esc(name)} is still running: ${writing} writing now. Numbers can still move.</p>` : "";
   };
-  const foot = `<p class="imp-foot">Simulated people find problems. They do not prove anyone would pay. Fixed means they stopped raising it, matched by wording, so check before trusting.</p>`;
+  const foot = `<p class="imp-foot">Fixed means people stopped raising it, matched by wording, so check before trusting.</p>`;
   if (!ra) {
     const { list, ranked } = problemsOf(B);
     return `${live(B, roundName(rb))}<section class="hero flat"><p class="eyebrow">Am I improving?</p><h1>One round so far</h1><p class="hero-text">${esc(roundName(rb))} has nothing to compare with yet. Run another round to see the change. Here are its top problems.</p></section>
-      ${ranked ? "" : `<ul class="imp-notes"><li>Not ranked yet: problems are grouped by wording, so this is rough.</li></ul>`}${problemGroup("top", rankProblems(list), B, B, state.open) || empty("No problems recorded yet.")}${foot}`;
+      ${ranked ? "" : `<ul class="imp-notes"><li>Not ranked yet: problems are grouped by wording, so this is rough.</li></ul>`}${problemGroup("top", rankProblems(list), B, B, state.open) || empty("No problems recorded yet.")}`;
   }
   const A = state.cache[ra.id];
   if (!A) return empty("Loading rounds…");
@@ -140,6 +140,6 @@ function improvingView(state) {
   return `${live(B, nameB)}${live(A, nameA)}<section class="hero ${tone}"><p class="eyebrow">Am I improving? ${esc(nameB)} against ${esc(nameA)}</p><h1><span aria-hidden="true">${sign}</span> ${esc(word)}</h1><p class="hero-text">${esc(headlineSentence(c))}</p></section>
     ${tilesFor(c)}${notesFor(c, nameA, nameB)}
     ${c.ranked
-    ? `${problemGroup("fixed", c.problems.fixed, A, A, state.open)}${problemGroup("fresh", c.problems.fresh, B, B, state.open)}${problemGroup("open", c.problems.open, B, B, state.open)}`
-    : problemGroup("top", rankProblems(problemsOf(B, c.inBoth).list), B, B, state.open)}${foot}`;
+    ? `${problemGroup("fixed", c.problems.fixed, A, A, state.open)}${problemGroup("fresh", c.problems.fresh, B, B, state.open)}${problemGroup("open", c.problems.open, B, B, state.open)}${foot}`
+    : problemGroup("top", rankProblems(problemsOf(B, c.inBoth).list), B, B, state.open)}`;
 }
